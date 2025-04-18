@@ -1,5 +1,7 @@
 package com.extractor.unraveldocs.user.model;
 
+import com.extractor.unraveldocs.auth.enums.RoleName;
+import com.extractor.unraveldocs.auth.model.Role;
 import com.extractor.unraveldocs.auth.model.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,6 +11,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
@@ -44,6 +47,9 @@ public class User {
     @OneToOne
     @JoinColumn(name = "verification_status_id", referencedColumnName = "id")
     private VerificationStatus verificationStatus;
+
+    @ManyToMany(fetch =  FetchType.EAGER)
+    private Set<Role> roles;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")
