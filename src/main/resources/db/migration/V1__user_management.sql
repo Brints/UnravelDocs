@@ -18,6 +18,8 @@ CREATE TABLE roles (
 -- Create users table
 CREATE TABLE users (
     id VARCHAR(36) PRIMARY KEY,
+    image_url VARCHAR(512),
+    profile_picture_thumbnail_url VARCHAR(512),
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,

@@ -1,6 +1,5 @@
 package com.extractor.unraveldocs.user.model;
 
-import com.extractor.unraveldocs.auth.enums.RoleName;
 import com.extractor.unraveldocs.auth.model.Role;
 import com.extractor.unraveldocs.auth.model.VerificationStatus;
 import jakarta.persistence.*;
@@ -23,10 +22,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(nullable = true, name = "profile_picture")
+    private String profilePicture;
+
+    @Column(nullable = false, name = "first_name")
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "last_name")
     private String lastName;
 
     @Column(nullable = false, unique = true)
@@ -35,13 +37,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "last_login")
     private LocalDateTime lastLogin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "is_active")
     private boolean isActive = false;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "is_verified")
     private boolean isVerified = false;
 
     @OneToOne
