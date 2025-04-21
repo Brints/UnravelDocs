@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils;
+package com.extractor.unraveldocs.utils.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

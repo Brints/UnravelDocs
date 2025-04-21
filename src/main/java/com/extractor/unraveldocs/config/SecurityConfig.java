@@ -1,8 +1,8 @@
 package com.extractor.unraveldocs.config;
 
-import com.extractor.unraveldocs.utils.JwtAuthenticationEntryPoint;
-import com.extractor.unraveldocs.utils.JwtAuthenticationFilter;
-import com.extractor.unraveldocs.utils.JwtTokenProvider;
+import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationEntryPoint;
+import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationFilter;
+import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -74,19 +74,19 @@ public class SecurityConfig {
                         "/docs",
                         "/docs/**",
                         "/docs.html",
+                        "/swagger-ui/index.html",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/api/v1/auth/login",
-                        "/api/v1/auth/**").permitAll()
+                        "/api/v1/auth/register").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        //http.addFilter(jwtAuthenticationFilter);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

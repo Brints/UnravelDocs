@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 @Builder
 public record UserResponseDto(
-        HttpStatus status_code,
+        int status_code,
         String status,
         String message,
         UserData data

@@ -1,7 +1,7 @@
 package com.extractor.unraveldocs.user.model;
 
-import com.extractor.unraveldocs.auth.model.Role;
-import com.extractor.unraveldocs.auth.model.VerificationStatus;
+import com.extractor.unraveldocs.auth.enums.Role;
+import com.extractor.unraveldocs.auth.model.UserVerification;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +10,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Entity
@@ -22,8 +21,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = true, name = "profile_picture")
+    @Column(name = "image_url")
     private String profilePicture;
+
+    @Column(name = "profile_picture_thumbnail_url")
+    private String profilePictureThumbnailUrl;
 
     @Column(nullable = false, name = "first_name")
     private String firstName;
@@ -37,7 +39,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, name = "last_login")
+    @Column(name = "last_login", columnDefinition = "TIMESTAMP")
     private LocalDateTime lastLogin;
 
     @Column(nullable = false, name = "is_active")
@@ -46,12 +48,13 @@ public class User {
     @Column(nullable = false, name = "is_verified")
     private boolean isVerified = false;
 
-    @OneToOne
-    @JoinColumn(name = "verification_status_id", referencedColumnName = "id")
-    private VerificationStatus verificationStatus;
+    //@Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'user'")
+    private Role role = Role.USER;
 
-    @ManyToMany(fetch =  FetchType.EAGER)
-    private Set<Role> roles;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_verification_id", referencedColumnName = "id")
+    private UserVerification userVerification;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")

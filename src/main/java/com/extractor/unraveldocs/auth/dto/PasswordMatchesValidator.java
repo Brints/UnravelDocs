@@ -7,6 +7,9 @@ import jakarta.validation.ConstraintValidatorContext;
 public class PasswordMatchesValidator implements ConstraintValidator<PasswordMatches, SignUpRequestDto> {
     @Override
     public boolean isValid(SignUpRequestDto request, ConstraintValidatorContext context) {
-        return request.password().equals(request.confirmPassword());
+        if (request.password() == null || request.confirmPassword() == null) {
+            return false;
+        }
+        return request.password().trim().equals(request.confirmPassword().trim());
     }
 }

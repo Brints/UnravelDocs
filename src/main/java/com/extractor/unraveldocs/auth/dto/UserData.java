@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.auth.dto;
 
+import com.extractor.unraveldocs.auth.enums.Role;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -10,10 +11,9 @@ public record UserData(
         String firstName,
         String lastName,
         String email,
+        Role role,
         LocalDateTime lastLogin,
         boolean isActive,
-        boolean isVerified,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        boolean isVerified
 ) {
 }

@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.auth.dto.request;
 
+import com.extractor.unraveldocs.auth.dto.PasswordMatches;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 @Builder
+@PasswordMatches
 public record SignUpRequestDto(
         @NotBlank(message = "First name is required")
         @Size(min = 2, max = 80, message = "First name must be between 2 and 80 characters")
@@ -34,4 +36,14 @@ public record SignUpRequestDto(
         @NotBlank(message = "Confirm password is required")
         String confirmPassword
 ) {
+        @Override
+        public String toString() {
+                return "SignUpRequestDto{" +
+                        "firstName='" + firstName + '\'' +
+                        ", lastName='" + lastName + '\'' +
+                        ", email='" + email + '\'' +
+                        ", password='[REDACTED]'" +
+                        ", confirmPassword='[REDACTED]'" +
+                        '}';
+        }
 }

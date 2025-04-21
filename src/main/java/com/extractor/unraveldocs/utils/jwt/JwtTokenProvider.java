@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils;
+package com.extractor.unraveldocs.utils.jwt;
 
 import com.extractor.unraveldocs.user.model.User;
 import io.jsonwebtoken.Claims;
@@ -7,13 +7,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -26,9 +24,7 @@ public class JwtTokenProvider {
     public String generateToken(User user) {
         Claims claims = Jwts.claims()
                 .subject(user.getEmail())
-                .add("roles", user.getRoles().stream()
-                .map(role -> role.getRoleName().name())
-                        .collect(Collectors.toList()))
+                .add("roles", user.getRole())
                 .add("isVerified", user.isVerified())
                 .build();
 
