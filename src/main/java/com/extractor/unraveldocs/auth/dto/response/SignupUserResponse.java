@@ -1,14 +1,13 @@
 package com.extractor.unraveldocs.auth.dto.response;
 
-import com.extractor.unraveldocs.auth.dto.UserData;
+import com.extractor.unraveldocs.auth.dto.SignupUserData;
 import lombok.Builder;
-import org.springframework.http.HttpStatus;
 
 @Builder
-public record UserResponseDto(
+public record SignupUserResponse(
         int status_code,
         String status,
         String message,
-        UserData data
+        SignupUserData data
 ) {
 }

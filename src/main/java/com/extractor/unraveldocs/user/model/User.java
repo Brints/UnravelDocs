@@ -48,7 +48,7 @@ public class User {
     @Column(nullable = false, name = "is_verified")
     private boolean isVerified = false;
 
-    //@Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'user'")
     private Role role = Role.USER;
 

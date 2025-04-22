@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record UserData(
+public record SignupUserData(
         String id,
         String firstName,
         String lastName,

@@ -1,24 +1,32 @@
 package com.extractor.unraveldocs.auth.service;
 
-import com.extractor.unraveldocs.auth.dto.UserData;
+import com.extractor.unraveldocs.auth.dto.LoginUserData;
+import com.extractor.unraveldocs.auth.dto.SignupUserData;
+import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.UserResponseDto;
+import com.extractor.unraveldocs.auth.dto.request.VerifyEmailDto;
+import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
+import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
+import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
+import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
+import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,31 +35,17 @@ import java.time.LocalDateTime;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService implements UserDetailsService {
+public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserLibrary userLibrary;
     private final GenerateVerificationToken verificationToken;
     private final DateHelper dateHelper;
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws BadRequestException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
-
-        if (!user.isVerified()) {
-            throw new BadRequestException("User is not yet verified. Please check your email for verification.");
-        }
-
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
-                .password(user.getPassword())
-                .roles(user.getRole().toString())
-                .build();
-    }
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional
-    public UserResponseDto registerUser(SignUpRequestDto request) {
+    public SignupUserResponse registerUser(SignUpRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already exists");
         }
@@ -92,11 +86,79 @@ public class AuthService implements UserDetailsService {
 
         userRepository.save(user);
 
-        return UserResponseDto.builder()
+        return buildUserSignupResponse(user);
+    }
+
+    public UserLoginResponse loginUser(LoginRequestDto request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+        User user = (User) authentication.getPrincipal();
+
+        if (user == null) {
+            throw new BadRequestException("Invalid email or password");
+        }
+
+        User userExists = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new NotFoundException("User does not exist."));
+
+        if (!userExists.isVerified()) {
+            throw new BadRequestException("User is not yet verified. Please check your email for verification.");
+        }
+        if (!userExists.isActive()) {
+            throw new BadRequestException("User is not active. Please contact support.");
+        }
+        String jwtToken = jwtTokenProvider.generateToken(user);
+        user.setLastLogin(LocalDateTime.now());
+
+        userRepository.save(user);
+
+        return buildUserLoginResponse(user, jwtToken);
+    }
+
+    @Transactional
+    public VerifyEmailResponse verifyEmail(String email, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User does not exist."));
+
+        if (user.isVerified()) {
+            throw new BadRequestException("User is already verified. Please login.");
+        }
+
+        UserVerification userVerification = user.getUserVerification();
+        if (!userVerification.getEmailVerificationToken().equals(token)) {
+            throw new BadRequestException("Invalid email verification token.");
+        }
+
+        if (userVerification.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+            userVerification.setStatus(VerifiedStatus.EXPIRED);
+            throw new BadRequestException("Email verification token has expired.");
+        }
+
+        userVerification.setEmailVerificationToken(null);
+        userVerification.setEmailVerified(true);
+        userVerification.setEmailVerificationTokenExpiry(null);
+        userVerification.setStatus(VerifiedStatus.VERIFIED);
+
+        user.setVerified(userVerification.getStatus().equals(VerifiedStatus.VERIFIED));
+        user.setActive(true);
+
+
+        userRepository.save(user);
+
+        return VerifyEmailResponse.builder()
+                .status_code(HttpStatus.OK.value())
+                .status("success")
+                .message("Email verified successfully")
+                .build();
+    }
+
+    private SignupUserResponse buildUserSignupResponse(User user) {
+        return SignupUserResponse.builder()
                 .status_code(HttpStatus.CREATED.value())
                 .status("success")
                 .message("User registered successfully")
-                .data(UserData.builder()
+                .data(SignupUserData.builder()
                         .id(user.getId())
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
@@ -105,6 +167,27 @@ public class AuthService implements UserDetailsService {
                         .isActive(user.isActive())
                         .role(user.getRole())
                         .lastLogin(user.getLastLogin())
+                        .build())
+                .build();
+    }
+
+    private UserLoginResponse buildUserLoginResponse(User user, String accessToken) {
+        return UserLoginResponse.builder()
+                .status_code(HttpStatus.OK.value())
+                .status("success")
+                .message("User logged in successfully")
+                .data(LoginUserData.builder()
+                        .id(user.getId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .isVerified(user.isVerified())
+                        .isActive(user.isActive())
+                        .role(user.getRole())
+                        .lastLogin(user.getLastLogin())
+                        .accessToken(accessToken)
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
                         .build())
                 .build();
     }

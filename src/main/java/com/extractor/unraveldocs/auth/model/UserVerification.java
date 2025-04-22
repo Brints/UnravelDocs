@@ -26,7 +26,7 @@ public class UserVerification {
     @Column
     private String emailVerificationToken;
 
-    //@Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column
     private VerifiedStatus status = VerifiedStatus.PENDING;
 

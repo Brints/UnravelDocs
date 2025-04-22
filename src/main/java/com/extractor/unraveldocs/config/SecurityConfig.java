@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.config;
 
+import com.extractor.unraveldocs.auth.service.CustomUserDetailsService;
 import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationEntryPoint;
 import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationFilter;
 import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
@@ -34,7 +35,7 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
-            UserDetailsService userDetailsService
+            CustomUserDetailsService userDetailsService
     ) {
         return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
     }
@@ -80,7 +81,8 @@ public class SecurityConfig {
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/api/v1/auth/login",
-                        "/api/v1/auth/register").permitAll()
+                        "/api/v1/auth/signup",
+                        "/api/v1/auth/verify-email").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint))
