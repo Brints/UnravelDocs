@@ -4,9 +4,11 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +44,8 @@ public class SwaggerConfig {
                 .components(new Components()
                         .addSchemas("file", new Schema<>()
                                 .type("string")
-                                .format("binary"))
+                                .format("binary")
+                                .description("File upload"))
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
                                         .name("bearerAuth")
@@ -54,5 +57,21 @@ public class SwaggerConfig {
                         new SecurityRequirement()
                                 .addList("bearerAuth")
                 ));
+    }
+
+    @Bean
+    public OpenApiCustomizer customOpenApiCustomizer() {
+        return openApi -> {
+            openApi.getPaths().get("/api/v1/auth/signup")
+                    .getPost()
+                    .addParametersItem(new Parameter()
+                            .name("profilePicture")
+                            .required(false)
+                            .description("Optional profile picture")
+                            .in("formData")
+                            .schema(new Schema<>()
+                                    .type("string")
+                                    .format("binary")));
+        };
     }
 }

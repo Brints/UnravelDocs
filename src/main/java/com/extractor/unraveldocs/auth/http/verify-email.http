@@ -1,4 +1,4 @@
-@email = test@example.com
-@token = 550e301e7f957cacf73340297acd43a21388d637c16862caf91934fa958d3b16
+@email = {{EMAIL}}
+@token = {{VERIFY_EMAIL_TOKEN}}
 
 GET http://localhost:8080/api/v1/auth/verify-email?email={{email}}&token={{token}}

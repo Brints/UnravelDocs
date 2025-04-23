@@ -1,0 +1,5 @@
+@userId = {{USER_ID}}
+@token = {{TOKEN}}
+
+GET http://localhost:8080/api/v1/user/me/{{userId}}
+Authorization: Bearer {{token}}

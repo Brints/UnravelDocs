@@ -33,3 +33,6 @@ build/
 .vscode/
 
 application.properties
+.env
+rest-client.private.env.json
+http-client.private.env.json

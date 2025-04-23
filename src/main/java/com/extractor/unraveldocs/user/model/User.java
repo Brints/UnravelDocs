@@ -24,9 +24,6 @@ public class User {
     @Column(name = "image_url")
     private String profilePicture;
 
-    @Column(name = "profile_picture_thumbnail_url")
-    private String profilePictureThumbnailUrl;
-
     @Column(nullable = false, name = "first_name")
     private String firstName;
 
