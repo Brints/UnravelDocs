@@ -75,7 +75,6 @@ public class AuthService {
         userVerification.setPasswordResetTokenExpiry(null);
 
         String profilePictureUrl = null;
-        String thumbnailUrl = null;
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
             try {
@@ -95,7 +94,6 @@ public class AuthService {
         user.setFirstName(transformedFirstName);
         user.setLastName(transformedLastName);
         user.setProfilePicture(profilePictureUrl);
-        user.setProfilePictureThumbnailUrl(thumbnailUrl);
         user.setActive(false);
         user.setVerified(false);
         user.setRole(userCount ? Role.ADMIN : Role.USER);
@@ -111,7 +109,12 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
-        User user = (User) authentication.getPrincipal();
+        //User user = (User) authentication.getPrincipal();
+
+        org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new NotFoundException("User does not exist."));
 
         if (user == null) {
             throw new BadRequestException("Invalid email or password");

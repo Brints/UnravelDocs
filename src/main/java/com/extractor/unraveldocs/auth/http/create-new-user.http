@@ -6,11 +6,11 @@ Content-Disposition: form-data; name="request"
 Content-Type: application/json
 
 {
-"firstName": "John",
-"lastName": "Doe",
+"firstName": "aniebiet",
+"lastName": "afia",
 "password": "Password123?",
 "confirmPassword": "Password123?",
-"email": "example@test.com"
+"email": "aniebiet@gmail.com"
 }
 
 

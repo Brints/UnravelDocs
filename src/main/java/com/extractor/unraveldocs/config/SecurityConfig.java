@@ -76,12 +76,14 @@ public class SecurityConfig {
                         "/docs.html",
                         "/swagger-ui/index.html",
                         "/v3/api-docs/**",
-                        "/swagger-ui/**",
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/api/v1/auth/login",
                         "/api/v1/auth/signup",
                         "/api/v1/auth/verify-email").permitAll()
+                        .requestMatchers(
+                                "/me/**"
+                        ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint))
