@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Builder
 public record SignupUserData(
         String id,
+        String profilePicture,
         String firstName,
         String lastName,
         String email,
