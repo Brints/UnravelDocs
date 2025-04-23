@@ -4,7 +4,6 @@ import com.extractor.unraveldocs.auth.dto.LoginUserData;
 import com.extractor.unraveldocs.auth.dto.SignupUserData;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.request.VerifyEmailDto;
 import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
 import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
@@ -16,6 +15,7 @@ import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
+import com.extractor.unraveldocs.utils.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
@@ -29,8 +29,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -43,9 +45,10 @@ public class AuthService {
     private final DateHelper dateHelper;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final AwsS3Service awsS3Service;
 
     @Transactional
-    public SignupUserResponse registerUser(SignUpRequestDto request) {
+    public SignupUserResponse registerUser(SignUpRequestDto request, MultipartFile profilePicture) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already exists");
         }
@@ -71,16 +74,31 @@ public class AuthService {
         userVerification.setPasswordResetToken(null);
         userVerification.setPasswordResetTokenExpiry(null);
 
+        String profilePictureUrl = null;
+        String thumbnailUrl = null;
+
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            try {
+                String fileName = "profile_pictures/" + UUID.randomUUID() + "-" + profilePicture.getOriginalFilename();
+                profilePictureUrl = awsS3Service.uploadFile(profilePicture, fileName);
+            } catch (Exception e) {
+                log.error("Error uploading profile picture: {}", e.getMessage());
+                throw new BadRequestException("Failed to upload profile picture");
+            }
+        }
+
+        log.info("Profile picture URL: {}", profilePictureUrl);
+
         User user = new User();
         user.setEmail(request.email().toLowerCase());
         user.setPassword(encryptedPassword);
         user.setFirstName(transformedFirstName);
         user.setLastName(transformedLastName);
+        user.setProfilePicture(profilePictureUrl);
+        user.setProfilePictureThumbnailUrl(thumbnailUrl);
         user.setActive(false);
         user.setVerified(false);
         user.setRole(userCount ? Role.ADMIN : Role.USER);
-        user.setProfilePicture(null);
-        user.setProfilePictureThumbnailUrl(null);
         user.setLastLogin(null);
         user.setUserVerification(userVerification);
 
@@ -160,6 +178,7 @@ public class AuthService {
                 .message("User registered successfully")
                 .data(SignupUserData.builder()
                         .id(user.getId())
+                        .profilePicture(user.getProfilePicture())
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
                         .email(user.getEmail())
