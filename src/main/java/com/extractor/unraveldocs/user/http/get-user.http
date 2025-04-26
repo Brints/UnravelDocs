@@ -1,5 +1,5 @@
 @userId = {{USER_ID}}
-@token = {{TOKEN}}
+@token = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhbmllYmlldEBnbWFpbC5jb20iLCJyb2xlcyI6IlVTRVIiLCJpc1ZlcmlmaWVkIjp0cnVlLCJ1c2VySWQiOiI4MmY0ZGE4My0xNzZlLTQzODktOWM5YS0wZDE1N2RhNmQ3ZTUiLCJpYXQiOjE3NDU2ODI3OTcsImV4cCI6MTc0NjU0Njc5N30.yB0U39tuGbyonCbr6x_86JyQHm1kEjqZl6TJEkrVwFI
 
-GET http://localhost:8080/api/v1/user/me/{{userId}}
+GET http://localhost:8080/api/v1/user/{{userId}}
 Authorization: Bearer {{token}}

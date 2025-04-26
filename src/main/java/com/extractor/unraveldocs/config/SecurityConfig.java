@@ -1,11 +1,15 @@
 package com.extractor.unraveldocs.config;
 
 import com.extractor.unraveldocs.auth.service.CustomUserDetailsService;
+import com.extractor.unraveldocs.utils.CustomPermissionEvaluator;
 import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationEntryPoint;
 import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationFilter;
 import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -26,17 +30,22 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig {
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private final ObjectMapper objectMapper;
 
-    public SecurityConfig(JwtAuthenticationEntryPoint authenticationEntryPoint) {
+    public SecurityConfig(
+            JwtAuthenticationEntryPoint authenticationEntryPoint,
+            ObjectMapper objectMapper) {
         this.authenticationEntryPoint = authenticationEntryPoint;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
-            CustomUserDetailsService userDetailsService
+            CustomUserDetailsService userDetailsService,
+            ObjectMapper objectMapper
     ) {
-        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
+        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, objectMapper);
     }
 
     @Bean
@@ -47,6 +56,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager manager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    protected MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
+        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+        handler.setPermissionEvaluator(new CustomPermissionEvaluator());
+        return handler;
     }
 
     @Bean
