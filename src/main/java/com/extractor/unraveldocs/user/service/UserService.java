@@ -21,23 +21,39 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserResponse userProfile(String userId, @AuthenticationPrincipal UserDetails authenticatedUser) {
-        if (userId == null || userId.isEmpty()) {
-            throw new BadRequestException("User ID cannot be null or empty");
-        }
-
-        User loggedInUser = userRepository.findByEmail(authenticatedUser.getUsername())
-                .orElseThrow(() -> new NotFoundException("User not found"));
+    public UserResponse getUserProfileById(String userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (!loggedInUser.getId().equals(user.getId()) && loggedInUser.getRole() != Role.ADMIN) {
-            throw new ForbiddenException("You do not have permission to view this profile");
-        }
+        return buildUserResponse(user);
+    }
+
+    public UserResponse getAuthenticatedUserProfile(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         return buildUserResponse(user);
     }
+
+//    public UserResponse userProfile(String userId, @AuthenticationPrincipal UserDetails authenticatedUser) {
+//        if (userId == null || userId.isEmpty()) {
+//            throw new BadRequestException("User ID cannot be null or empty");
+//        }
+//
+//        User loggedInUser = userRepository.findByEmail(authenticatedUser.getUsername())
+//                .orElseThrow(() -> new NotFoundException("User not found"));
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new NotFoundException("User not found"));
+//
+//        if (!loggedInUser.getId().equals(user.getId()) && loggedInUser.getRole() != Role.ADMIN) {
+//            throw new ForbiddenException("You do not have permission to view this profile");
+//        }
+//
+//        return buildUserResponse(user);
+//    }
 
     private UserResponse buildUserResponse(User user) {
         UserData userData = new UserData();
