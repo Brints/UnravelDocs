@@ -50,34 +50,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = resolveToken(request);
 
-            if (token == null) {
+            if (token == null || SecurityContextHolder.getContext().getAuthentication() != null) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                jwtTokenProvider.validateToken(token);
-                String email = jwtTokenProvider.getEmailFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            jwtTokenProvider.validateToken(token);
+            String email = jwtTokenProvider.getEmailFromToken(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                if (userDetails == null) {
-                    sendErrorResponse(response, HttpStatus.FORBIDDEN, "User not found", "USER_NOT_FOUND");
-                    return;
-                }
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
-                // Set the authentication details
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Set the authentication in the security context
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (userDetails == null) {
+                sendErrorResponse(response, HttpStatus.FORBIDDEN, "User not found", "USER_NOT_FOUND");
+                return;
             }
-            // Proceed with the filter chain
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
             sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Token has expired", "EXPIRED_TOKEN");
@@ -85,8 +80,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid token", "INVALID_TOKEN");
         } catch (SignatureException ex) {
             sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Token signature invalid", "INVALID_SIGNATURE");
-        } catch (ForbiddenException ex) {
-            sendErrorResponse(response, HttpStatus.FORBIDDEN, ex.getMessage(), "AUTHORIZATION_FAILED");
         } catch (Exception ex) {
             sendErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Authentication failed", "AUTH_ERROR");
         }

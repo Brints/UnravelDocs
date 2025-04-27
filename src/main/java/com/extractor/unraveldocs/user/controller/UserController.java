@@ -1,7 +1,6 @@
 package com.extractor.unraveldocs.user.controller;
 
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
-import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
