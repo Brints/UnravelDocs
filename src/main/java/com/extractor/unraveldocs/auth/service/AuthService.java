@@ -12,6 +12,7 @@ import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
+import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -86,8 +87,6 @@ public class AuthService {
             }
         }
 
-        log.info("Profile picture URL: {}", profilePictureUrl);
-
         User user = new User();
         user.setEmail(request.email().toLowerCase());
         user.setPassword(encryptedPassword);
@@ -102,6 +101,8 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // TODO: Send email with the verification token (implementation not shown)
+
         return buildUserSignupResponse(user);
     }
 
@@ -109,26 +110,20 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
-        //User user = (User) authentication.getPrincipal();
 
         org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new NotFoundException("User does not exist."));
+                .orElseThrow(() -> new ForbiddenException("Invalid credentials."));
 
-        if (user == null) {
-            throw new BadRequestException("Invalid email or password");
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new ForbiddenException("Invalid credentials.");
         }
 
-        User userExists = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new NotFoundException("User does not exist."));
-
-        if (!userExists.isVerified()) {
+        if (!user.isVerified()) {
             throw new BadRequestException("User is not yet verified. Please check your email for verification.");
         }
-        if (!userExists.isActive()) {
-            throw new BadRequestException("User is not active. Please contact support.");
-        }
+
         String jwtToken = jwtTokenProvider.generateToken(user);
         user.setLastLogin(LocalDateTime.now());
 

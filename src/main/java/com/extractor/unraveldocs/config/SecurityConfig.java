@@ -96,9 +96,12 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/api/v1/auth/login",
                         "/api/v1/auth/signup",
-                        "/api/v1/auth/verify-email").permitAll()
+                        "/api/v1/auth/verify-email",
+                        "/api/v1/user/forgot-password",
+                        "/api/v1/user/reset-password/**").permitAll()
                         .requestMatchers(
-                                "/me/**"
+                                "/me/**",
+                                "/api/v1/user/**"
                         ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception

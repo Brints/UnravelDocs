@@ -58,20 +58,4 @@ public class SwaggerConfig {
                                 .addList("bearerAuth")
                 ));
     }
-
-    @Bean
-    public OpenApiCustomizer customOpenApiCustomizer() {
-        return openApi -> {
-            openApi.getPaths().get("/api/v1/auth/signup")
-                    .getPost()
-                    .addParametersItem(new Parameter()
-                            .name("profilePicture")
-                            .required(false)
-                            .description("Optional profile picture")
-                            .in("formData")
-                            .schema(new Schema<>()
-                                    .type("string")
-                                    .format("binary")));
-        };
-    }
 }
