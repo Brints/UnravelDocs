@@ -98,7 +98,9 @@ public class SecurityConfig {
                         "/api/v1/auth/signup",
                         "/api/v1/auth/verify-email",
                         "/api/v1/user/forgot-password",
-                        "/api/v1/user/reset-password/**").permitAll()
+                        "/api/v1/user/reset-password/**",
+                        "/api/v1/auth/resend-verification-email",
+                        "/api/v1/auth/generate-password").permitAll()
                         .requestMatchers(
                                 "/me/**",
                                 "/api/v1/user/**"

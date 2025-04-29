@@ -16,6 +16,7 @@ import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -69,8 +70,9 @@ public class UserService {
                 userVerification.getPasswordResetTokenExpiry() != null &&
                 userVerification.getPasswordResetTokenExpiry().isAfter(currentTime)
         ){
-            long timeLeft = dateHelper.getTimeLeftToExpiry(userVerification.getPasswordResetTokenExpiry(), "hour");
-            throw new BadRequestException("A password reset request has already been sent. Time left: " + timeLeft + " minutes.");
+            String timeLeft = dateHelper.getTimeLeftToExpiry(userVerification.getPasswordResetTokenExpiry(), "hours");
+            throw new BadRequestException(
+                    "A password reset request has already been sent. Token expires in : " + timeLeft);
         }
 
         String token = generateVerificationToken.generateVerificationToken();
@@ -119,6 +121,7 @@ public class UserService {
         user.setPassword(encodedPassword);
         userVerification.setPasswordResetToken(null);
         userVerification.setPasswordResetTokenExpiry(null);
+        userVerification.setStatus(VerifiedStatus.VERIFIED);
         userRepository.save(user);
 
         // TODO: Send email to user with the new password (implementation not shown)
@@ -140,7 +143,7 @@ public class UserService {
         userData.setUpdatedAt(user.getUpdatedAt());
 
         UserResponse userResponse = new UserResponse();
-        userResponse.setStatus_code(200);
+        userResponse.setStatusCode(HttpStatus.OK.value());
         userResponse.setStatus("success");
         userResponse.setMessage("User profile retrieved successfully");
         userResponse.setData(userData);
@@ -150,7 +153,7 @@ public class UserService {
 
     private UserResponse buildResponseWithoutData(String message) {
         UserResponse userResponse = new UserResponse();
-        userResponse.setStatus_code(200);
+        userResponse.setStatusCode(HttpStatus.OK.value());
         userResponse.setStatus("success");
         userResponse.setMessage(message);
         userResponse.setData(null);

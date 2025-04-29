@@ -1,6 +1,8 @@
 package com.extractor.unraveldocs.auth.controller;
 
+import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
+import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,10 +24,15 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
     private final AuthService authService;
 
-    @PostMapping(
-            value = "/signup",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping("/generate-password")
+    @Operation(summary = "Generate a Strong Password.")
+    public ResponseEntity<?> generatePassword(
+            @Valid @RequestBody GeneratePasswordDto password
+            ) {
+        return ResponseEntity.status(HttpStatus.OK).body(authService.generatePassword(password));
+    }
+
+    @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Register a new user")
     public ResponseEntity<?> register(
             @Valid @RequestPart("request") SignUpRequestDto request,
@@ -60,5 +67,19 @@ public class AuthController {
            @RequestParam String email,
            @RequestParam String token) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.verifyEmail(email, token));
+    }
+
+    /**
+     * Resend verification email to the user.
+     *
+     * @param request The email address of the user to resend the verification email to.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @PostMapping("/resend-verification-email")
+    @Operation(summary = "Resend verification email")
+    public ResponseEntity<?> resendVerificationEmail(
+            @Valid @RequestBody ResendEmailVerificationDto request
+            ) {
+        return ResponseEntity.status(HttpStatus.OK).body(authService.resendEmailVerification(request));
     }
 }
