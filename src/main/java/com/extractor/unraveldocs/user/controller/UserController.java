@@ -1,19 +1,20 @@
 package com.extractor.unraveldocs.user.controller;
 
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
+import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
+import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
+import com.extractor.unraveldocs.user.interfaces.PasswordResetParams;
 import com.extractor.unraveldocs.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -54,5 +55,41 @@ public class UserController {
             @PathVariable String userId
     ) {
         return ResponseEntity.ok(userService.getUserProfileById(userId));
+    }
+
+    /**
+     * Forgot password implementation to send a password reset link to the user's email.
+     *
+     * @param forgotPasswordDto The DTO containing the email address of the user requesting a password reset.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @Operation(summary = "Forgot password")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordDto forgotPasswordDto
+            ) {
+
+        return ResponseEntity.ok(userService.forgotPassword(forgotPasswordDto));
+    }
+
+    /**
+     * Reset password implementation to update the user's password.
+     *
+     * @param resetPasswordDto The DTO containing the new password and confirmation.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @Operation(summary = "Reset password")
+    @PostMapping("/reset-password/{token}/{email}")
+    public ResponseEntity<?> resetPassword(
+            @Parameter(description = "Password reset token")
+            @PathVariable String token,
+
+            @Parameter(description = "Email address of the user")
+            @PathVariable String email,
+
+            @Parameter(description = "New password and confirmation")
+            @Valid @RequestBody ResetPasswordDto resetPasswordDto
+            ) {
+        return ResponseEntity.ok(userService.resetPassword(new PasswordResetParams(email, token), resetPasswordDto));
     }
 }

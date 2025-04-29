@@ -2,7 +2,9 @@ package com.extractor.unraveldocs.auth.service;
 
 import com.extractor.unraveldocs.auth.dto.LoginUserData;
 import com.extractor.unraveldocs.auth.dto.SignupUserData;
+import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
+import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
@@ -12,7 +14,12 @@ import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
+import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.user.dto.GeneratedPassword;
+import com.extractor.unraveldocs.user.dto.UserData;
+import com.extractor.unraveldocs.user.dto.response.GenratePasswordResponse;
+import com.extractor.unraveldocs.user.dto.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.aws.AwsS3Service;
@@ -86,8 +93,6 @@ public class AuthService {
             }
         }
 
-        log.info("Profile picture URL: {}", profilePictureUrl);
-
         User user = new User();
         user.setEmail(request.email().toLowerCase());
         user.setPassword(encryptedPassword);
@@ -102,33 +107,57 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // TODO: Send email with the verification token (implementation not shown)
+
         return buildUserSignupResponse(user);
+    }
+
+    public GenratePasswordResponse generatePassword(GeneratePasswordDto passwordDto) {
+        int convertedLength = Integer.parseInt(passwordDto.passwordLength());
+        if (convertedLength < 8) {
+            throw new BadRequestException("Length should be greater than 8");
+        }
+
+        // Check if user provides a string of excluded characters
+        String excludedChars = passwordDto.excludedChars();
+        String generatedPassword;
+        if (excludedChars != null && !excludedChars.isEmpty()) {
+            char[] excludedCharsArray = excludedChars.toCharArray();
+            generatedPassword =
+                    userLibrary.generateStrongPassword(convertedLength, excludedCharsArray);
+        } else {
+            generatedPassword = userLibrary.generateStrongPassword(convertedLength);
+        }
+
+       GenratePasswordResponse response = new GenratePasswordResponse();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setStatus("success");
+        response.setMessage("Password successfully generated.");
+        response.setData(GeneratedPassword.builder()
+                .generatedPassword(generatedPassword)
+                .build());
+
+        return response;
     }
 
     public UserLoginResponse loginUser(LoginRequestDto request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
-        //User user = (User) authentication.getPrincipal();
 
         org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new NotFoundException("User does not exist."));
+                .orElseThrow(() -> new ForbiddenException("Invalid credentials."));
 
-        if (user == null) {
-            throw new BadRequestException("Invalid email or password");
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new ForbiddenException("Invalid credentials.");
         }
 
-        User userExists = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new NotFoundException("User does not exist."));
-
-        if (!userExists.isVerified()) {
+        if (!user.isVerified()) {
             throw new BadRequestException("User is not yet verified. Please check your email for verification.");
         }
-        if (!userExists.isActive()) {
-            throw new BadRequestException("User is not active. Please contact support.");
-        }
+
         String jwtToken = jwtTokenProvider.generateToken(user);
         user.setLastLogin(LocalDateTime.now());
 
@@ -153,6 +182,7 @@ public class AuthService {
 
         if (userVerification.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
             userVerification.setStatus(VerifiedStatus.EXPIRED);
+            userRepository.save(user);
             throw new BadRequestException("Email verification token has expired.");
         }
 
@@ -164,7 +194,6 @@ public class AuthService {
         user.setVerified(userVerification.getStatus().equals(VerifiedStatus.VERIFIED));
         user.setActive(true);
 
-
         userRepository.save(user);
 
         return VerifyEmailResponse.builder()
@@ -172,6 +201,41 @@ public class AuthService {
                 .status("success")
                 .message("Email verified successfully")
                 .build();
+    }
+
+    public UserResponse resendEmailVerification(ResendEmailVerificationDto request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new NotFoundException("User does not exist."));
+
+        if (user.isVerified()) {
+            throw new BadRequestException("User is already verified. Please login.");
+        }
+
+        // Check if the user already has an active verification token
+        UserVerification userVerification = user.getUserVerification();
+        if (userVerification.getEmailVerificationToken() != null) {
+            String timeLeft = dateHelper.getTimeLeftToExpiry(userVerification.getEmailVerificationTokenExpiry(),
+                    "hour");
+            throw new BadRequestException(
+                    "A verification email has already been sent. Token expires in: " + timeLeft);
+        }
+
+        String emailVerificationToken = verificationToken.generateVerificationToken();
+        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate("hour", 3);
+
+        userVerification.setEmailVerificationToken(emailVerificationToken);
+        userVerification.setEmailVerificationTokenExpiry(emailVerificationTokenExpiry);
+        userVerification.setStatus(VerifiedStatus.PENDING);
+        userVerification.setEmailVerified(false);
+
+        userRepository.save(user);
+
+        UserResponse response = new UserResponse();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setStatus("success");
+        response.setMessage("Verification email resent successfully");
+        response.setData(null); // No data to return
+        return response;
     }
 
     private SignupUserResponse buildUserSignupResponse(User user) {
