@@ -1,6 +1,7 @@
 package com.extractor.unraveldocs.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Builder
