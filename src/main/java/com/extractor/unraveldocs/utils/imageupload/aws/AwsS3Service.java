@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils.aws;
+package com.extractor.unraveldocs.utils.imageupload.aws;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
