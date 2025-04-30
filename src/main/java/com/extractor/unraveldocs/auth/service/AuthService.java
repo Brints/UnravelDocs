@@ -12,12 +12,13 @@ import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
+import com.extractor.unraveldocs.emailservice.emailtemplates.EmailTemplatesService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.dto.GeneratedPassword;
-import com.extractor.unraveldocs.user.dto.response.GenratePasswordResponse;
+import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
 import com.extractor.unraveldocs.user.dto.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -52,6 +53,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final AwsS3Service awsS3Service;
+    private final EmailTemplatesService templatesService;
 
     @Transactional
     public SignupUserResponse registerUser(SignUpRequestDto request, MultipartFile profilePicture) {
@@ -65,6 +67,7 @@ public class AuthService {
 
         String transformedFirstName = userLibrary.capitalizeFirstLetterOfName(request.firstName());
         String transformedLastName = userLibrary.capitalizeFirstLetterOfName(request.lastName());
+        String fullName = transformedFirstName + " " + transformedLastName;
 
         String encryptedPassword = passwordEncoder.encode(request.password());
         String emailVerificationToken = verificationToken.generateVerificationToken();
@@ -107,11 +110,15 @@ public class AuthService {
         userRepository.save(user);
 
         // TODO: Send email with the verification token (implementation not shown)
+        templatesService.sendVerificationEmail(user.getEmail(),
+                fullName,
+                emailVerificationToken,
+                dateHelper.getTimeLeftToExpiry(emailVerificationTokenExpiry, "hour"));
 
         return buildUserSignupResponse(user);
     }
 
-    public GenratePasswordResponse generatePassword(GeneratePasswordDto passwordDto) {
+    public GeneratePasswordResponse generatePassword(GeneratePasswordDto passwordDto) {
         int convertedLength = Integer.parseInt(passwordDto.passwordLength());
         if (convertedLength < 8) {
             throw new BadRequestException("Length should be greater than 8");
@@ -128,7 +135,7 @@ public class AuthService {
             generatedPassword = userLibrary.generateStrongPassword(convertedLength);
         }
 
-       GenratePasswordResponse response = new GenratePasswordResponse();
+       GeneratePasswordResponse response = new GeneratePasswordResponse();
         response.setStatusCode(HttpStatus.OK.value());
         response.setStatus("success");
         response.setMessage("Password successfully generated.");

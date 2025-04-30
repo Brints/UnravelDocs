@@ -1,12 +1,14 @@
 package com.extractor.unraveldocs.user.dto.response;
 
 import com.extractor.unraveldocs.user.dto.GeneratedPassword;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.Map;
+import lombok.NoArgsConstructor;
 
 @Data
-public class GenratePasswordResponse {
+@AllArgsConstructor
+@NoArgsConstructor
+public class GeneratePasswordResponse {
     int statusCode;
     String status;
     String message;

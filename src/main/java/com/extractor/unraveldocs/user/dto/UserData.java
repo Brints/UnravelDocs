@@ -1,11 +1,15 @@
 package com.extractor.unraveldocs.user.dto;
 
 import com.extractor.unraveldocs.auth.enums.Role;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserData {
     String id;
     String profilePicture;

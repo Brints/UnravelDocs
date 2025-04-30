@@ -1,0 +1,70 @@
+package com.extractor.unraveldocs.emailservice.mailgun;
+
+import com.extractor.unraveldocs.config.MailgunConfig;
+import com.mailgun.api.v3.MailgunMessagesApi;
+import com.mailgun.model.message.Message;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+
+@Service
+public class MailgunEmailService {
+
+    private final MailgunMessagesApi mailgunMessagesApi;
+    private final MailgunConfig mailgunConfig;
+
+    @Autowired
+    public MailgunEmailService(
+            MailgunMessagesApi mailgunMessagesApi,
+            MailgunConfig mailgunConfig) {
+        this.mailgunMessagesApi = mailgunMessagesApi;
+        this.mailgunConfig = mailgunConfig;
+    }
+
+    public void sendSimpleEmail(String to, String subject, String body) {
+        Message message = Message.builder()
+                .from(mailgunConfig.getMailgunFromEmail())
+                .to(to)
+                .subject(subject)
+                .text(body)
+                .build();
+
+        try {
+            mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
+        }
+    }
+
+    public void sendWithAttachment(String to, String subject, String body, File attachment) {
+        Message message = Message.builder()
+                .from(mailgunConfig.getMailgunFromEmail())
+                .to(to)
+                .subject(subject)
+                .text(body)
+                .attachment(attachment)
+                .build();
+
+        try {
+            mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send email with attachment: " + e.getMessage(), e);
+        }
+    }
+
+    public void sendHtmlEmail(String to, String subject, String htmlBody) {
+        Message message = Message.builder()
+                .from(mailgunConfig.getMailgunFromEmail())
+                .to(to)
+                .subject(subject)
+                .html(htmlBody)
+                .build();
+
+        try {
+            mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send HTML email: " + e.getMessage(), e);
+        }
+    }
+}
