@@ -12,7 +12,7 @@ import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
-import com.extractor.unraveldocs.emailservice.emailtemplates.EmailTemplatesService;
+import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
@@ -53,7 +53,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final AwsS3Service awsS3Service;
-    private final EmailTemplatesService templatesService;
+    private final AuthEmailTemplateService templatesService;
 
     @Transactional
     public SignupUserResponse registerUser(SignUpRequestDto request, MultipartFile profilePicture) {
@@ -65,9 +65,8 @@ public class AuthService {
             throw new BadRequestException("Password cannot be same as email.");
         }
 
-        String transformedFirstName = userLibrary.capitalizeFirstLetterOfName(request.firstName());
-        String transformedLastName = userLibrary.capitalizeFirstLetterOfName(request.lastName());
-        String fullName = transformedFirstName + " " + transformedLastName;
+        String firstName = userLibrary.capitalizeFirstLetterOfName(request.firstName());
+        String lastName = userLibrary.capitalizeFirstLetterOfName(request.lastName());
 
         String encryptedPassword = passwordEncoder.encode(request.password());
         String emailVerificationToken = verificationToken.generateVerificationToken();
@@ -98,8 +97,8 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.email().toLowerCase());
         user.setPassword(encryptedPassword);
-        user.setFirstName(transformedFirstName);
-        user.setLastName(transformedLastName);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setProfilePicture(profilePictureUrl);
         user.setActive(false);
         user.setVerified(false);
@@ -111,7 +110,8 @@ public class AuthService {
 
         // TODO: Send email with the verification token (implementation not shown)
         templatesService.sendVerificationEmail(user.getEmail(),
-                fullName,
+                firstName,
+                lastName,
                 emailVerificationToken,
                 dateHelper.getTimeLeftToExpiry(emailVerificationTokenExpiry, "hour"));
 
@@ -241,6 +241,14 @@ public class AuthService {
         response.setStatus("success");
         response.setMessage("Verification email resent successfully");
         response.setData(null); // No data to return
+
+        // TODO: Send email with the verification token (implementation not shown)
+        templatesService.sendVerificationEmail(user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                emailVerificationToken,
+                dateHelper.getTimeLeftToExpiry(emailVerificationTokenExpiry, "hour"));
+
         return response;
     }
 

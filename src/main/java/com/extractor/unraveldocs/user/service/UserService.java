@@ -5,6 +5,7 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
@@ -31,6 +32,7 @@ public class UserService {
     private final GenerateVerificationToken generateVerificationToken;
     private final DateHelper dateHelper;
     private final PasswordEncoder passwordEncoder;
+    private final UserEmailTemplateService userEmailTemplateService;
 
     public UserResponse getUserProfileById(String userId) {
 
@@ -82,7 +84,15 @@ public class UserService {
         userVerification.setPasswordResetTokenExpiry(expiryTime);
         userRepository.save(user);
 
-        // Send email with the token (implementation not shown)
+        // TODO: Send email with the token (implementation not shown)
+        String expiration = dateHelper.getTimeLeftToExpiry(expiryTime, "hours");
+        userEmailTemplateService.sendPasswordResetToken(
+                email,
+                user.getFirstName(),
+                user.getLastName(),
+                token,
+                expiration
+        );
 
         return buildResponseWithoutData("Password reset link sent to your email.");
     }
@@ -125,6 +135,11 @@ public class UserService {
         userRepository.save(user);
 
         // TODO: Send email to user with the new password (implementation not shown)
+        userEmailTemplateService.sendSuccessfulPasswordReset(
+                email,
+                user.getFirstName(),
+                user.getLastName()
+        );
 
         return buildResponseWithoutData("Password reset successfully.");
     }
