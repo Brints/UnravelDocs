@@ -3,52 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./styles/email-verification.css">
     <title>Email Verification Token</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h2 {
-            color: #333;
-        }
-        p {
-            color: #555;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .button:hover {
-            background-color: #0056b3;
-        }
-        @media (max-width: 600px) {
-            .container {
-                width: 100%;
-                padding: 10px;
-            }
-        }
-    </style>
 </head>
 <body>
 <div class="container">
     <h2>Welcome to UnravelDocs Service!</h2>
     <p>Hello
-        <span th:text="${fullName}">FirstName</span>,
+        <span class="firstName" th:text="${firstName}">FirstName</span>
+        <span class="lastName" th:text="${lastName}">LastName</span>,
     </p>
     <p>Thank you for registering with us. Please verify your email address by clicking the link below:</p>
     <a th:href="@{${verificationUrl}}" class="button" target="_blank">Verify Email</a>

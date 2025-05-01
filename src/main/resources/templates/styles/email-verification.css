@@ -1,0 +1,7 @@
+@import url("base.css");
+
+.lastName {
+  font-size: 1.5em;
+  font-weight: bold;
+    color: #284306;
+}
