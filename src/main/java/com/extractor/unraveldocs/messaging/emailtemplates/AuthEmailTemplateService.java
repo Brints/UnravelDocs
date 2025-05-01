@@ -1,15 +1,13 @@
-package com.extractor.unraveldocs.emailservice.emailtemplates;
+package com.extractor.unraveldocs.messaging.emailtemplates;
 
-import com.extractor.unraveldocs.emailservice.mailgun.MailgunEmailService;
+import com.extractor.unraveldocs.messaging.emailservice.mailgun.MailgunEmailService;
 import com.extractor.unraveldocs.utils.templates.ThymleafEmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
-public class EmailTemplatesService {
+public class AuthEmailTemplateService {
     private final ThymleafEmailService thymleafEmailService;
     private final MailgunEmailService mailgunEmailService;
 
@@ -19,6 +17,6 @@ public class EmailTemplatesService {
         String verificationPath = "/api/v1/auth/verify-email";
         String verificationUrl = baseUrl + verificationPath + "?email=" + email + "&token=" + token;
         String emailContent = thymleafEmailService.generateEmailContent(fullName, verificationUrl, expiration);
-        mailgunEmailService.sendHtmlEmail(email, "Email Verification", emailContent);
+        mailgunEmailService.sendHtmlEmail(email, "Email Verification Token", emailContent);
     }
 }

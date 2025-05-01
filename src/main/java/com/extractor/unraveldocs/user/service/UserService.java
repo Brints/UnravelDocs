@@ -82,7 +82,7 @@ public class UserService {
         userVerification.setPasswordResetTokenExpiry(expiryTime);
         userRepository.save(user);
 
-        // Send email with the token (implementation not shown)
+        // TODO: Send email with the token (implementation not shown)
 
         return buildResponseWithoutData("Password reset link sent to your email.");
     }

@@ -12,7 +12,7 @@ import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
-import com.extractor.unraveldocs.emailservice.emailtemplates.EmailTemplatesService;
+import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
@@ -53,7 +53,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final AwsS3Service awsS3Service;
-    private final EmailTemplatesService templatesService;
+    private final AuthEmailTemplateService templatesService;
 
     @Transactional
     public SignupUserResponse registerUser(SignUpRequestDto request, MultipartFile profilePicture) {
