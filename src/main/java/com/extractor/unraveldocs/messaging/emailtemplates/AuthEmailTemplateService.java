@@ -1,6 +1,6 @@
 package com.extractor.unraveldocs.messaging.emailtemplates;
 
-import com.extractor.unraveldocs.messaging.emailservice.mailgun.MailgunEmailService;
+import com.extractor.unraveldocs.messaging.emailservice.mailgun.service.MailgunEmailService;
 import com.extractor.unraveldocs.utils.thymleafservice.ThymleafEmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

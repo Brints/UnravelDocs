@@ -1,7 +1,8 @@
-package com.extractor.unraveldocs.messaging.emailservice.mailgun;
+package com.extractor.unraveldocs.messaging.emailservice.mailgun.service;
 
 import com.extractor.unraveldocs.config.MailgunConfig;
 import com.mailgun.api.v3.MailgunMessagesApi;
+import com.mailgun.exception.MailGunException;
 import com.mailgun.model.message.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class MailgunEmailService {
 
         try {
             mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
-        } catch (Exception e) {
+        } catch (MailGunException e) {
             throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
         }
     }
@@ -48,7 +49,7 @@ public class MailgunEmailService {
 
         try {
             mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
-        } catch (Exception e) {
+        } catch (MailGunException e) {
             throw new RuntimeException("Failed to send email with attachment: " + e.getMessage(), e);
         }
     }
@@ -63,7 +64,7 @@ public class MailgunEmailService {
 
         try {
             mailgunMessagesApi.sendMessage(mailgunConfig.getMailgunDomain(), message);
-        } catch (Exception e) {
+        } catch (MailGunException e) {
             throw new RuntimeException("Failed to send HTML email: " + e.getMessage(), e);
         }
     }
