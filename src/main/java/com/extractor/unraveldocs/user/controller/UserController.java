@@ -1,6 +1,7 @@
 package com.extractor.unraveldocs.user.controller;
 
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
+import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
 import com.extractor.unraveldocs.user.interfaces.PasswordResetParams;
@@ -91,5 +92,23 @@ public class UserController {
             @Valid @RequestBody ResetPasswordDto resetPasswordDto
             ) {
         return ResponseEntity.ok(userService.resetPassword(new PasswordResetParams(email, token), resetPasswordDto));
+    }
+
+    /**
+     * Change password implementation to update the user's password.
+     *
+     * @param changePasswordDto The DTO containing the current and new passwords.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @Operation(summary = "Change password")
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @AuthenticationPrincipal UserDetails authenticatedUser,
+            @Valid @RequestBody ChangePasswordDto changePasswordDto
+    ) {
+        return ResponseEntity.ok(userService.changePassword(
+                new PasswordResetParams(authenticatedUser.getUsername(),
+                        null)
+                , changePasswordDto));
     }
 }

@@ -90,6 +90,7 @@ public class SecurityConfig {
                         "/docs",
                         "/docs/**",
                         "/docs.html",
+                        "/swagger-ui/**",
                         "/swagger-ui/index.html",
                         "/v3/api-docs/**",
                         "/swagger-resources/**",
@@ -103,7 +104,8 @@ public class SecurityConfig {
                         "/api/v1/auth/generate-password").permitAll()
                         .requestMatchers(
                                 "/me/**",
-                                "/api/v1/user/**"
+                                "/api/v1/user/**",
+                                "/api/v1/user/change-password"
                         ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
