@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils.thymleafservice;
+package com.extractor.unraveldocs.messaging.thymleafservice;
 
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -46,5 +46,14 @@ public class ThymleafEmailService {
         context.setVariable("firstName", firstName);
         context.setVariable("lastName", lastName);
         return templateEngine.process("successful-password-reset", context);
+    }
+
+    public String successfulPasswordChangeContent(
+            String firstName,
+            String lastName
+    ) {
+        context.setVariable("firstName", firstName);
+        context.setVariable("lastName", lastName);
+        return templateEngine.process("change-password", context);
     }
 }
