@@ -4,7 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record VerifyEmailResponse(
-        int status_code,
+        int statusCode,
         String status,
         String message
 ) {

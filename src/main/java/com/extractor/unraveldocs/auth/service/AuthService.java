@@ -56,7 +56,7 @@ public class AuthService {
     private final AuthEmailTemplateService templatesService;
 
     @Transactional
-    public SignupUserResponse registerUser(SignUpRequestDto request, MultipartFile profilePicture) {
+    public SignupUserResponse registerUser(SignUpRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already exists");
         }
@@ -84,10 +84,10 @@ public class AuthService {
 
         String profilePictureUrl = null;
 
-        if (profilePicture != null && !profilePicture.isEmpty()) {
+        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             try {
-                String fileName = "profile_pictures/" + UUID.randomUUID() + "-" + profilePicture.getOriginalFilename();
-                profilePictureUrl = awsS3Service.uploadFile(profilePicture, fileName);
+                String fileName = "profile_pictures/" + UUID.randomUUID() + "-" + request.profilePicture().getOriginalFilename();
+                profilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
             } catch (Exception e) {
                 log.error("Error uploading profile picture: {}", e.getMessage());
                 throw new BadRequestException("Failed to upload profile picture");
@@ -203,7 +203,7 @@ public class AuthService {
         userRepository.save(user);
 
         return VerifyEmailResponse.builder()
-                .status_code(HttpStatus.OK.value())
+                .statusCode(HttpStatus.OK.value())
                 .status("success")
                 .message("Email verified successfully")
                 .build();
@@ -254,7 +254,7 @@ public class AuthService {
 
     private SignupUserResponse buildUserSignupResponse(User user) {
         return SignupUserResponse.builder()
-                .status_code(HttpStatus.CREATED.value())
+                .statusCode(HttpStatus.CREATED.value())
                 .status("success")
                 .message("User registered successfully")
                 .data(SignupUserData.builder()
@@ -273,7 +273,7 @@ public class AuthService {
 
     private UserLoginResponse buildUserLoginResponse(User user, String accessToken) {
         return UserLoginResponse.builder()
-                .status_code(HttpStatus.OK.value())
+                .statusCode(HttpStatus.OK.value())
                 .status("success")
                 .message("User logged in successfully")
                 .data(LoginUserData.builder()
