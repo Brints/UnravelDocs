@@ -5,7 +5,7 @@ import lombok.Builder;
 
 @Builder
 public record UserLoginResponse(
-        int status_code,
+        int statusCode,
         String status,
         String message,
         LoginUserData data

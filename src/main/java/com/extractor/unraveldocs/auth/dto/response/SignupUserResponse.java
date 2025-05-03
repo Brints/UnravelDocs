@@ -5,7 +5,7 @@ import lombok.Builder;
 
 @Builder
 public record SignupUserResponse(
-        int status_code,
+        int statusCode,
         String status,
         String message,
         SignupUserData data
