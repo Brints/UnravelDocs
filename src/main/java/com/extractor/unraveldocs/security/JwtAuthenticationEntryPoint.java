@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils.jwt;
+package com.extractor.unraveldocs.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils.jwt;
+package com.extractor.unraveldocs.security;
 
 import com.extractor.unraveldocs.exceptions.custom.JwtAuthenticationException;
 import com.extractor.unraveldocs.user.model.User;

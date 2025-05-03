@@ -1,6 +1,5 @@
-package com.extractor.unraveldocs.utils.jwt;
+package com.extractor.unraveldocs.security;
 
-import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;

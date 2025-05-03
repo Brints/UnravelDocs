@@ -5,7 +5,9 @@ import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
 import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
+import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
 import com.extractor.unraveldocs.auth.service.AuthService;
+import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,8 +29,24 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
 
+    /**
+     * Generate a strong password based on the provided criteria.
+     *
+     * @param password The password generation request containing length and excluded characters.
+     * @return ResponseEntity containing the generated password.
+     */
     @PostMapping("/generate-password")
-    @Operation(summary = "Generate a Strong Password.")
+    @Operation(
+            summary = "Generate a Strong Password.",
+            description = "Generate a strong password based on the provided criteria.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Password generated successfully",
+                            content = @Content(schema = @Schema(implementation = GeneratePasswordResponse.class))
+                    )
+            }
+    )
     public ResponseEntity<?> generatePassword(
             @Valid @RequestBody GeneratePasswordDto password
             ) {
@@ -57,21 +75,8 @@ public class AuthController {
     )
     public ResponseEntity<?> register(
             @Valid
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Sign-up request containing user details",
-                    required = true,
-                    content = {
-                            @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = SignUpRequestDto.class)
-                                    ),
-                            @Content(
-                                    mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                                    schema = @Schema(implementation = SignUpRequestDto.class)
-                            )
-                    }
-            )
-            @RequestBody SignUpRequestDto request
+            @ModelAttribute
+            SignUpRequestDto request
     ) {
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             String contentType = request.profilePicture().getContentType();
@@ -87,16 +92,42 @@ public class AuthController {
         );
     }
 
+    /**
+     * Login a registered user.
+     *
+     * @param request The login request containing email and password.
+     * @return ResponseEntity indicating the result of the operation.
+     */
     @PostMapping("/login")
-    @Operation(summary = "Login a registered user")
+    @Operation(
+            summary = "Login a registered user",
+            description = "Login a registered user",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User logged in successfully",
+                            content = @Content(schema = @Schema(implementation = UserLoginResponse.class))
+                    )
+            }
+    )
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.loginUser(request));
     }
 
+    /**
+     * Verify the user's email address using a token.
+     *
+     * @param email The email address of the user to verify.
+     * @param token The verification token sent to the user's email.
+     * @return ResponseEntity indicating the result of the operation.
+     */
     @GetMapping("/verify-email")
     @Operation(summary = "Verify user email")
     public ResponseEntity<?> verifyEmail(
+            @Schema(description = "Email address of the user to verify", example = "john-doe@test.com")
            @RequestParam String email,
+
+            @Schema(description = "Verification token sent to the user's email", example = "1234567890abcdef")
            @RequestParam String token) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.verifyEmail(email, token));
     }
