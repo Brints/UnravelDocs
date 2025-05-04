@@ -4,7 +4,7 @@ import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.user.interfaces.PasswordResetParams;
+import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
 import com.extractor.unraveldocs.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,7 +50,7 @@ public class UserController {
      */
     @Operation(summary = "Get user profile by ID")
     @GetMapping("/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'VIEW_PROFILE') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getUserProfileById(
             @Parameter(description = "ID of the user to retrieve")
             @PathVariable String userId

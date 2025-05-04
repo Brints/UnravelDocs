@@ -2,10 +2,12 @@ package com.extractor.unraveldocs.config;
 
 import com.extractor.unraveldocs.auth.service.CustomUserDetailsService;
 import com.extractor.unraveldocs.utils.CustomPermissionEvaluator;
-import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationEntryPoint;
-import com.extractor.unraveldocs.utils.jwt.JwtAuthenticationFilter;
-import com.extractor.unraveldocs.utils.jwt.JwtTokenProvider;
+import com.extractor.unraveldocs.security.JwtAuthenticationEntryPoint;
+import com.extractor.unraveldocs.security.JwtAuthenticationFilter;
+import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
@@ -28,16 +30,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
-    private final ObjectMapper objectMapper;
 
-    public SecurityConfig(
-            JwtAuthenticationEntryPoint authenticationEntryPoint,
-            ObjectMapper objectMapper) {
-        this.authenticationEntryPoint = authenticationEntryPoint;
-        this.objectMapper = objectMapper;
-    }
+    @Getter
+    private final ObjectMapper objectMapper;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(
@@ -116,4 +114,5 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
 }

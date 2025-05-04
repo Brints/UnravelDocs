@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.user.interfaces;
+package com.extractor.unraveldocs.user.interfaces.passwordreset;
 
 import lombok.Builder;
 
