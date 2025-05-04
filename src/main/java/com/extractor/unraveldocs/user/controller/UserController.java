@@ -3,14 +3,21 @@ package com.extractor.unraveldocs.user.controller;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
+import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
+import com.extractor.unraveldocs.user.dto.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
+import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "User Management", description = "Manage user profiles and settings")
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
     /**
      * Get the profile of the currently authenticated user.
@@ -36,7 +44,7 @@ public class UserController {
     ) {
 
         if (authenticatedUser == null) {
-            throw new ForbiddenException("User not authenticated");
+            throw new ForbiddenException("Please login to view your profile");
         }
 
         return ResponseEntity.ok(userService.getAuthenticatedUserProfile(authenticatedUser.getUsername()));
@@ -106,9 +114,73 @@ public class UserController {
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @RequestBody ChangePasswordDto changePasswordDto
     ) {
+        if (authenticatedUser == null) {
+            throw new ForbiddenException("Please login to change your password");
+        }
         return ResponseEntity.ok(userService.changePassword(
                 new PasswordResetParams(authenticatedUser.getUsername(),
                         null)
                 , changePasswordDto));
+    }
+
+    /**
+     * Update the profile of the currently authenticated user.
+     *
+     * @param request The request containing the updated profile information.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @Operation(summary = "Update user profile",
+            description = "User can update some information in their profile.",
+            responses = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User profile retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
+            )
+            }
+    )
+    @PutMapping(value = "/update-profile",
+            consumes = {
+                    MediaType.MULTIPART_FORM_DATA_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE
+            }
+    )
+    public ResponseEntity<?> updateProfile(
+            @AuthenticationPrincipal UserDetails authenticatedUser,
+            @Valid @ModelAttribute ProfileUpdateRequestDto request
+    ) {
+        if (authenticatedUser == null) {
+            throw new ForbiddenException("Please login to update your profile");
+        }
+
+        String userEmail = authenticatedUser.getUsername();
+        String userId = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ForbiddenException("User not found"))
+                .getId();
+
+        return ResponseEntity.ok(userService.updateProfile(request, userId));
+    }
+
+    /**
+     * Delete the profile of the currently authenticated user.
+     *
+     * @param authenticatedUser The authenticated user whose profile is to be deleted.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @Operation(summary = "Delete user profile")
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> deleteUser(
+            @AuthenticationPrincipal UserDetails authenticatedUser
+    ) {
+        if (authenticatedUser == null) {
+            throw new ForbiddenException("Please login to delete your profile");
+        }
+
+        String userId = userRepository.findByEmail(authenticatedUser.getUsername())
+                .orElseThrow(() -> new ForbiddenException("User not found"))
+                .getId();
+
+        userService.deleteUser(userId);
+        return ResponseEntity.ok("User profile deleted successfully");
     }
 }

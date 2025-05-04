@@ -1,8 +1,11 @@
 package com.extractor.unraveldocs.utils.generatetoken;
 
+import org.springframework.stereotype.Component;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+@Component
 public class GenerateVerificationToken {
     private final SecureRandom random = new SecureRandom();
 

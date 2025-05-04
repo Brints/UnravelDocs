@@ -31,26 +31,4 @@ public class MailgunWebhookFilter extends OncePerRequestFilter {
         // Continue with the filter chain
         filterChain.doFilter(request, response);
     }
-
-    /*
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                   HttpServletResponse response,
-                                   FilterChain filterChain)
-            throws ServletException, IOException {
-
-        if ("/api/webhooks/mailgun".equals(request.getRequestURI())) {
-            String token = request.getParameter("token");
-            String timestamp = request.getParameter("timestamp");
-            String signature = request.getParameter("signature");
-
-            if (!MailgunSignature.verify(expectedToken, timestamp, token, signature)) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-        }
-
-        filterChain.doFilter(request, response);
-    }
-     */
 }

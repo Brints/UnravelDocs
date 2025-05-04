@@ -21,7 +21,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        return responseBuilder.buildUserResponse(user);
+        return responseBuilder.buildUserResponse(user, "User profile retrieved successfully");
     }
 
     @Override
@@ -30,6 +30,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        return responseBuilder.buildUserResponse(user);
+        return responseBuilder.buildUserResponse(user, "User profile retrieved successfully");
     }
 }

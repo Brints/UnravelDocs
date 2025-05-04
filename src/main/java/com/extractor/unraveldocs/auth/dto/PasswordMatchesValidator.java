@@ -1,6 +1,5 @@
 package com.extractor.unraveldocs.auth.dto;
 
-import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.beans.PropertyAccessorFactory;
