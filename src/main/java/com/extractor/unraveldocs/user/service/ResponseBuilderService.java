@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ResponseBuilderService {
-    public UserResponse buildUserResponse(User user) {
+    public UserResponse buildUserResponse(User user, String message) {
         UserData userData = new UserData();
         userData.setId(user.getId());
         userData.setProfilePicture(user.getProfilePicture());
@@ -24,7 +24,7 @@ public class ResponseBuilderService {
         UserResponse userResponse = new UserResponse();
         userResponse.setStatusCode(HttpStatus.OK.value());
         userResponse.setStatus("success");
-        userResponse.setMessage("User profile retrieved successfully");
+        userResponse.setMessage(message);
         userResponse.setData(userData);
 
         return userResponse;

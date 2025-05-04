@@ -1,10 +1,12 @@
 package com.extractor.unraveldocs.utils.userlib;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Component
 public class DateHelper {
     public LocalDateTime setExpiryDate(String format, int setTime) {
         LocalDateTime currentTime = LocalDateTime.now();

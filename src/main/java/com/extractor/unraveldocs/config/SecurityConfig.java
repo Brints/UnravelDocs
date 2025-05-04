@@ -103,7 +103,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/me/**",
                                 "/api/v1/user/**",
-                                "/api/v1/user/change-password"
+                                "/api/v1/user/change-password",
+                                "/api/v1/user/update-profile",
+                                "/api/v1/user/delete-account"
                         ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception

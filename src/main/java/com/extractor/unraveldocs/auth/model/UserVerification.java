@@ -39,6 +39,9 @@ public class UserVerification {
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime passwordResetTokenExpiry;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(
             nullable = false,

@@ -49,7 +49,10 @@ public class User {
     @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'user'")
     private Role role = Role.USER;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "user_verification_id", referencedColumnName = "id")
     private UserVerification userVerification;
 

@@ -1,7 +1,9 @@
 package com.extractor.unraveldocs.utils.userlib;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UserLibrary {
     public String capitalizeFirstLetterOfName(String name) {
         String firstLetter = name.substring(0, 1).toUpperCase();
