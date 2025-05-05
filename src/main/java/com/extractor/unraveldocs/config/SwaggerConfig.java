@@ -42,7 +42,7 @@ public class SwaggerConfig {
                                 .description("Production server")
                 ))
                 .components(new Components()
-                        .addSchemas("file", new Schema<>()
+                        .addSchemas("profilePicture", new Schema<>()
                                 .type("string")
                                 .format("binary")
                                 .description("File upload"))

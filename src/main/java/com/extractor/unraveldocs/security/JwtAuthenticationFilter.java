@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,19 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
-
-    public JwtAuthenticationFilter(
-            JwtTokenProvider jwtTokenProvider,
-            UserDetailsService userDetailsService,
-            ObjectMapper objectMapper) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.userDetailsService = userDetailsService;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     protected void doFilterInternal(
@@ -54,7 +47,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            jwtTokenProvider.validateToken(token);
+            boolean isValid = jwtTokenProvider.validateToken(token);
+            if (!isValid) {
+                sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid token", "INVALID_TOKEN");
+                return;
+            }
+
             String email = jwtTokenProvider.getEmailFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 

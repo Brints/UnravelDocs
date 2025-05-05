@@ -1,7 +1,6 @@
 package com.extractor.unraveldocs.auth.service.impl;
 
 import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
-import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.interfaces.EmailVerificationService;
 import com.extractor.unraveldocs.auth.model.UserVerification;
@@ -11,6 +10,7 @@ import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateServi
 import com.extractor.unraveldocs.user.dto.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
+import com.extractor.unraveldocs.user.service.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import jakarta.transaction.Transactional;
@@ -27,6 +27,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     private final GenerateVerificationToken verificationToken;
     private final DateHelper dateHelper;
     private final AuthEmailTemplateService templatesService;
+    private final ResponseBuilderService responseBuilder;
 
     public UserResponse resendEmailVerification(ResendEmailVerificationDto request) {
         User user = userRepository.findByEmail(request.email())
@@ -72,7 +73,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     }
 
     @Transactional
-    public VerifyEmailResponse verifyEmail(String email, String token) {
+    public UserResponse verifyEmail(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 
@@ -101,10 +102,6 @@ public class EmailVerificationImpl implements EmailVerificationService {
 
         userRepository.save(user);
 
-        return VerifyEmailResponse.builder()
-                .statusCode(HttpStatus.OK.value())
-                .status("success")
-                .message("Email verified successfully")
-                .build();
+        return responseBuilder.buildResponseWithoutData("Email verified successfully");
     }
 }

@@ -69,7 +69,7 @@ public class SignupUserImpl implements SignupUserService {
 
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             try {
-                String fileName = "profile_pictures/" + UUID.randomUUID() + "-" + request.profilePicture().getOriginalFilename();
+                String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
                 profilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
             } catch (Exception e) {
                 log.error("Error uploading profile picture: {}", e.getMessage());

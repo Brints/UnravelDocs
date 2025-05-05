@@ -7,11 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -47,12 +50,30 @@ public class AwsS3Service {
     }
 
     public String generateFileName(String originalFileName) {
-        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-        return System.currentTimeMillis() + "_" + Math.random() + fileExtension;
+        return "profile_pictures/" + UUID.randomUUID() + "-" + originalFileName;
     }
 
-    public void deleteFile(String fileName) {
-        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(fileName));
+    public void deleteFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return;
+        }
+
+        try {
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/profile_pictures/") + 1);
+            log.info("Deleting file from S3: {}", fileName);
+
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key("profile_pictures/" + fileName)
+                    .build();
+
+            s3Client.deleteObject(deleteObjectRequest);
+            log.info("File deleted successfully from S3: {}", fileName);
+
+        } catch (S3Exception ex) {
+            log.error("Error deleting file from S3: {}", ex.awsErrorDetails().errorMessage());
+            throw new RuntimeException("Failed to delete file from S3", ex);
+        }
     }
 
 }
