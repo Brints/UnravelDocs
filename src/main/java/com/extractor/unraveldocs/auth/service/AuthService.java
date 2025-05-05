@@ -6,7 +6,6 @@ import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
-import com.extractor.unraveldocs.auth.dto.response.VerifyEmailResponse;
 import com.extractor.unraveldocs.auth.interfaces.EmailVerificationService;
 import com.extractor.unraveldocs.auth.interfaces.GeneratePasswordService;
 import com.extractor.unraveldocs.auth.interfaces.LoginUserService;
@@ -34,7 +33,7 @@ public class AuthService {
         return loginUserService.loginUser(request);
     }
 
-    public VerifyEmailResponse verifyEmail(String email, String token) {
+    public UserResponse verifyEmail(String email, String token) {
         return emailVerificationService.verifyEmail(email, token);
     }
 

@@ -2,11 +2,13 @@ package com.extractor.unraveldocs.user.service.impl;
 
 import com.extractor.unraveldocs.auth.repository.UserVerificationRepository;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.interfaces.userimpl.DeleteUserService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeleteUserImpl implements DeleteUserService {
     private final UserRepository userRepository;
     private final UserVerificationRepository userVerificationRepository;
     private final AwsS3Service awsS3Service;
+    private final UserEmailTemplateService userEmailTemplateService;
 
     @Override
     @Transactional
@@ -27,12 +31,16 @@ public class DeleteUserImpl implements DeleteUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
+        //LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
+        LocalDateTime deletionDate = LocalDateTime.now().plusMinutes(5);
         user.setDeletedAt(deletionDate);
 
         if (user.getUserVerification() != null) {
             user.getUserVerification().setDeletedAt(deletionDate);
         }
+
+        // TODO: Send email notification to the user
+        userEmailTemplateService.scheduleUserDeletion(user.getEmail());
 
         userRepository.save(user);
     }
@@ -41,6 +49,7 @@ public class DeleteUserImpl implements DeleteUserService {
     @Transactional
     @Scheduled(cron = "0 0 0 * * ?")
     public void checkAndScheduleInactiveUsers() {
+        log.info("Checking for inactive users to schedule deletion...");
         LocalDateTime threshold = LocalDateTime.now().minusMonths(12);
 
         List<User> inactiveUsers = userRepository.findAllByLastLoginDateBefore(threshold);
@@ -53,6 +62,9 @@ public class DeleteUserImpl implements DeleteUserService {
             if (user.getUserVerification() != null) {
                 user.getUserVerification().setDeletedAt(deletionDate);
             }
+
+            // TODO: Send email notification to the user
+            userEmailTemplateService.scheduleUserDeletion(user.getEmail());
         }
 
         userRepository.saveAll(inactiveUsers);
@@ -62,6 +74,7 @@ public class DeleteUserImpl implements DeleteUserService {
     @Transactional
     @Scheduled(cron = "0 0 1 * * ?")
     public void processScheduledDeletions() {
+        log.info("Processing scheduled deletions...");
         LocalDateTime threshold = LocalDateTime.now();
 
         List<User> usersToDelete = userRepository.findAllByDeletedAtBefore(threshold);
@@ -97,5 +110,7 @@ public class DeleteUserImpl implements DeleteUserService {
         }
 
         userRepository.delete(user);
+
+        // TODO: Send email notification to the user
     }
 }

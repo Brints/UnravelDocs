@@ -8,6 +8,7 @@ import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
     private final UserRepository userRepository;
     private final AwsS3Service awsS3Service;
     private final ResponseBuilderService responseBuilder;
+    private final UserLibrary userLibrary;
 
     @Override
     @Transactional
@@ -27,23 +29,23 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
 
-        String updatedFirstName = request.firstName() != null ? request.firstName() : user.getFirstName();
-        String updatedLastName = request.lastName() != null ? request.lastName() : user.getLastName();
+        String updatedFirstName = request.firstName() != null || !request.firstName().isEmpty() ? request.firstName() : user.getFirstName();
+        String updatedLastName = request.lastName() != null || !request.firstName().isEmpty() ? request.lastName() : user.getLastName();
 
-        String updatedProfilePictureUrl = null;
+        String currentProfilePictureUrl = user.getProfilePicture();
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
-            String fileName = "profile_pictures/" + UUID.randomUUID() + "-" + request.profilePicture().getOriginalFilename();
-            updatedProfilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
 
-            String oldProfilePictureUrl = user.getProfilePicture();
-            if (oldProfilePictureUrl != null && !oldProfilePictureUrl.isEmpty()) {
-                awsS3Service.deleteFile(oldProfilePictureUrl);
+            String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
+            currentProfilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
+
+            if (currentProfilePictureUrl != null && !currentProfilePictureUrl.isEmpty()) {
+                awsS3Service.deleteFile(currentProfilePictureUrl);
             }
         }
 
-        user.setFirstName(updatedFirstName);
-        user.setLastName(updatedLastName);
-        user.setProfilePicture(updatedProfilePictureUrl);
+        user.setFirstName(userLibrary.capitalizeFirstLetterOfName(updatedFirstName));
+        user.setLastName(userLibrary.capitalizeFirstLetterOfName(updatedLastName));
+        user.setProfilePicture(currentProfilePictureUrl);
         userRepository.save(user);
 
         return responseBuilder.buildUserResponse(user, "Profile updated successfully");

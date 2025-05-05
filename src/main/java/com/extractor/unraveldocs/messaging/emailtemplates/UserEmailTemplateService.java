@@ -32,4 +32,9 @@ public class UserEmailTemplateService {
                 .successfulPasswordChangeContent(firstName, lastName);
         mailgunEmailService.sendHtmlEmail(email, "Password Change Successful", emailContent);
     }
+
+    public void scheduleUserDeletion(String email) {
+        String emailContent = "Your account is scheduled for deletion. If you did not request this, please contact support.";
+        mailgunEmailService.sendSimpleEmail(email, "User Deletion Scheduled", emailContent);
+    }
 }
