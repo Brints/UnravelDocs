@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,28 +27,38 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
     @Override
     @Transactional
     public UserResponse updateProfile(ProfileUpdateRequestDto request, String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
+        Optional<User> optionalUser = userRepository.findById(userId);
 
-        String updatedFirstName = request.firstName() != null || !request.firstName().isEmpty() ? request.firstName() : user.getFirstName();
-        String updatedLastName = request.lastName() != null || !request.firstName().isEmpty() ? request.lastName() : user.getLastName();
-
-        String currentProfilePictureUrl = user.getProfilePicture();
-        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
-
-            String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
-            currentProfilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
-
-            if (currentProfilePictureUrl != null && !currentProfilePictureUrl.isEmpty()) {
-                awsS3Service.deleteFile(currentProfilePictureUrl);
-            }
+        if (optionalUser.isEmpty()) {
+            throw new NotFoundException("User not found with ID: " + userId);
         }
 
-        user.setFirstName(userLibrary.capitalizeFirstLetterOfName(updatedFirstName));
-        user.setLastName(userLibrary.capitalizeFirstLetterOfName(updatedLastName));
-        user.setProfilePicture(currentProfilePictureUrl);
-        userRepository.save(user);
+        User user = optionalUser.get();
 
-        return responseBuilder.buildUserResponse(user, "Profile updated successfully");
+        if (request.firstName() != null && !request.firstName().isEmpty() && !request.firstName().equalsIgnoreCase(user.getFirstName())) {
+            String capitalizedFirstName = userLibrary.capitalizeFirstLetterOfName(request.firstName());
+            user.setFirstName(capitalizedFirstName);
+        }
+
+        if (request.lastName() != null && !request.lastName().isEmpty() && !request.lastName().equalsIgnoreCase(user.getLastName())) {
+            String capitalizedLastName = userLibrary.capitalizeFirstLetterOfName(request.lastName());
+            user.setLastName(capitalizedLastName);
+        }
+
+        String newProfilePictureUrl = null;
+        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
+
+            if (user.getProfilePicture() != null) {
+                awsS3Service.deleteFile(user.getProfilePicture());
+            }
+
+            String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
+            newProfilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
+            user.setProfilePicture(newProfilePictureUrl);
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        return responseBuilder.buildUserResponse(updatedUser, "Profile updated successfully");
     }
 }
