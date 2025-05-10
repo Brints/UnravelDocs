@@ -7,7 +7,9 @@ import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
 import com.extractor.unraveldocs.auth.service.AuthService;
+import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
+import com.extractor.unraveldocs.user.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -60,8 +62,7 @@ public class AuthController {
      * @return ResponseEntity indicating the result of the operation.
      */
     @PostMapping(value = "/signup",
-            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE,
-                    MediaType.APPLICATION_JSON_VALUE})
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Register a new user",
             description = "Register a new user with optional profile picture",
@@ -73,7 +74,7 @@ public class AuthController {
                     )
             }
     )
-    public ResponseEntity<?> register(
+    public ResponseEntity<SignupUserResponse> register(
             @Valid
             @ModelAttribute
             SignUpRequestDto request
@@ -82,14 +83,12 @@ public class AuthController {
             String contentType = request.profilePicture().getContentType();
             if (!MediaType.IMAGE_JPEG_VALUE.equals(contentType) &&
                     !MediaType.IMAGE_PNG_VALUE.equals(contentType)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Profile picture must be a JPEG or PNG image");
+                throw new BadRequestException("Profile picture must be a JPEG or PNG image");
             }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                authService.registerUser(request)
-        );
+                authService.registerUser(request));
     }
 
     /**
@@ -110,7 +109,7 @@ public class AuthController {
                     )
             }
     )
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
+    public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody LoginRequestDto request) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.loginUser(request));
     }
 
@@ -121,9 +120,9 @@ public class AuthController {
      * @param token The verification token sent to the user's email.
      * @return ResponseEntity indicating the result of the operation.
      */
-    @GetMapping("/verify-email")
+    @GetMapping(value = "/verify-email", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Verify user email")
-    public ResponseEntity<?> verifyEmail(
+    public ResponseEntity<UserResponse> verifyEmail(
             @Schema(description = "Email address of the user to verify", example = "john-doe@test.com")
            @RequestParam String email,
 
@@ -140,7 +139,7 @@ public class AuthController {
      */
     @PostMapping("/resend-verification-email")
     @Operation(summary = "Resend verification email")
-    public ResponseEntity<?> resendVerificationEmail(
+    public ResponseEntity<UserResponse> resendVerificationEmail(
             @Valid @RequestBody ResendEmailVerificationDto request
             ) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.resendEmailVerification(request));

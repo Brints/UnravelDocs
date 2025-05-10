@@ -17,14 +17,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByEmail(String email);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT CASE WHEN COUNT(u) = 0 THEN true ELSE false END FROM User u")
+    @Query("SELECT COUNT(u) = 0 FROM User u")
     boolean isFirstUserWithLock();
-
-    @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
-    List<User> findAllActive();
-
-    @Query("SELECT u FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
-    Optional<User> findActiveById(@Param("id") String id);
 
     @Query("SELECT u FROM User u WHERE u.lastLogin < :threshold AND u.deletedAt IS NULL")
     List<User> findAllByLastLoginDateBefore(@Param("threshold") LocalDateTime threshold);

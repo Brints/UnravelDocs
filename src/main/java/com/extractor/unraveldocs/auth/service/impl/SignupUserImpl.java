@@ -16,11 +16,11 @@ import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -52,7 +52,9 @@ public class SignupUserImpl implements SignupUserService {
 
         String encryptedPassword = passwordEncoder.encode(request.password());
         String emailVerificationToken = verificationToken.generateVerificationToken();
-        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate("hour", 3);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now,"hour", 3);
 
         boolean userCount = userRepository.isFirstUserWithLock();
 
@@ -95,7 +97,7 @@ public class SignupUserImpl implements SignupUserService {
                 firstName,
                 lastName,
                 emailVerificationToken,
-                dateHelper.getTimeLeftToExpiry(emailVerificationTokenExpiry, "hour"));
+                dateHelper.getTimeLeftToExpiry(now, emailVerificationTokenExpiry, "hour"));
 
         return responseBuilder.buildUserSignupResponse(user);
     }
