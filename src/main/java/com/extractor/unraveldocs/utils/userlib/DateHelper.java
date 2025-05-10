@@ -23,8 +23,7 @@ public class DateHelper {
             throw new BadRequestException("Expiry date cannot be null");
         }
 
-        LocalDateTime currentTime = LocalDateTime.now();
-        Duration duration = Duration.between(currentTime, expiryDate);
+        Duration duration = Duration.between(LocalDateTime.now(), expiryDate);
 
         return switch (format) {
             case "minutes", "minute" -> duration.toMinutes() < 2 ? "1 minute" : duration.toMinutes() + " minutes";

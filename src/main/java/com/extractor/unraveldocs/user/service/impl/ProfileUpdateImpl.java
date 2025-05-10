@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +44,7 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
             user.setLastName(capitalizedLastName);
         }
 
-        String newProfilePictureUrl = null;
+        String newProfilePictureUrl;
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
 
             if (user.getProfilePicture() != null) {
