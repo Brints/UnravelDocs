@@ -2,6 +2,7 @@ package com.extractor.unraveldocs.auth.dto.request;
 
 import com.extractor.unraveldocs.auth.dto.PasswordMatches;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,23 +12,23 @@ import org.springframework.web.multipart.MultipartFile;
 @PasswordMatches
 public record SignUpRequestDto(
         @Schema(description = "First name of the user", example = "John")
-        @NotBlank(message = "First name is required")
+        @NotNull(message = "First name is required")
         @Size(min = 2, max = 80, message = "First name must be between 2 and 80 characters")
         String firstName,
 
         @Schema(description = "Last name of the user", example = "Doe")
-        @NotBlank(message = "Last name is required")
+        @NotNull(message = "Last name is required")
         @Size(min = 2, max = 80, message = "Last name must be between 2 and 80 characters")
         String lastName,
 
         @Schema(description = "Email address of the user", example = "johndoe@example.com")
-        @NotBlank(message = "Email is required")
+        @NotNull(message = "Email is required")
         @Email(message = "Please enter a valid email address")
         @Size(max = 100, message = "Email must be less than 100 characters")
         String email,
 
         @Schema(description = "Password of the user", example = "P@ssw0rd123")
-        @NotBlank(message = "Password is required")
+        @NotNull(message = "Password is required")
         @Size(min = 8, message = "Password must be at least 8 characters")
         @Pattern.List({
                 @Pattern(regexp = ".*[a-z].*", message = "Password must contain at least one lowercase letter"),
@@ -38,10 +39,11 @@ public record SignUpRequestDto(
         String password,
 
         @Schema(description = "Confirm password of the user", example = "P@ssw0rd123")
-        @NotBlank(message = "Confirm password is required")
+        @NotNull(message = "Confirm password is required")
         String confirmPassword,
 
         @Schema(description = "Profile picture of the user (optional)")
+        @Nullable
         MultipartFile profilePicture
 ) {
         @Override

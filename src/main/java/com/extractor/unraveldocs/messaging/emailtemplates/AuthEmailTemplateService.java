@@ -3,6 +3,7 @@ package com.extractor.unraveldocs.messaging.emailtemplates;
 import com.extractor.unraveldocs.messaging.emailservice.mailgun.service.MailgunEmailService;
 import com.extractor.unraveldocs.messaging.thymleafservice.ThymleafEmailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -11,6 +12,7 @@ public class AuthEmailTemplateService {
     private final ThymleafEmailService thymleafEmailService;
     private final MailgunEmailService mailgunEmailService;
 
+    @Async
     public void sendVerificationEmail(String email, String firstName, String lastName, String token,
                                       String expiration) {
 

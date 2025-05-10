@@ -54,20 +54,20 @@ public class PasswordResetImpl implements PasswordResetService {
                 userVerification.getPasswordResetTokenExpiry() != null &&
                         userVerification.getPasswordResetTokenExpiry().isAfter(currentTime)
         ){
-            String timeLeft = dateHelper.getTimeLeftToExpiry(userVerification.getPasswordResetTokenExpiry(), "hours");
+            String timeLeft = dateHelper.getTimeLeftToExpiry(currentTime, userVerification.getPasswordResetTokenExpiry(), "hours");
             throw new BadRequestException(
                     "A password reset request has already been sent. Token expires in : " + timeLeft);
         }
 
         String token = generateVerificationToken.generateVerificationToken();
-        LocalDateTime expiryTime = dateHelper.setExpiryDate("hour", 1);
+        LocalDateTime expiryTime = dateHelper.setExpiryDate(currentTime,"hour", 1);
 
         userVerification.setPasswordResetToken(token);
         userVerification.setPasswordResetTokenExpiry(expiryTime);
         userRepository.save(user);
 
         // TODO: Send email with the token (implementation not shown)
-        String expiration = dateHelper.getTimeLeftToExpiry(expiryTime, "hours");
+        String expiration = dateHelper.getTimeLeftToExpiry(currentTime, expiryTime, "hours");
         userEmailTemplateService.sendPasswordResetToken(
                 email,
                 user.getFirstName(),

@@ -13,10 +13,10 @@ import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -39,15 +39,16 @@ public class EmailVerificationImpl implements EmailVerificationService {
 
         // Check if the user already has an active verification token
         UserVerification userVerification = user.getUserVerification();
+        LocalDateTime now = LocalDateTime.now();
         if (userVerification.getEmailVerificationToken() != null) {
-            String timeLeft = dateHelper.getTimeLeftToExpiry(userVerification.getEmailVerificationTokenExpiry(),
+            String timeLeft = dateHelper.getTimeLeftToExpiry(now, userVerification.getEmailVerificationTokenExpiry(),
                     "hour");
             throw new BadRequestException(
                     "A verification email has already been sent. Token expires in: " + timeLeft);
         }
 
         String emailVerificationToken = verificationToken.generateVerificationToken();
-        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate("hour", 3);
+        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now, "hour", 3);
 
         userVerification.setEmailVerificationToken(emailVerificationToken);
         userVerification.setEmailVerificationTokenExpiry(emailVerificationTokenExpiry);
@@ -67,7 +68,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
                 user.getFirstName(),
                 user.getLastName(),
                 emailVerificationToken,
-                dateHelper.getTimeLeftToExpiry(emailVerificationTokenExpiry, "hour"));
+                dateHelper.getTimeLeftToExpiry(now, emailVerificationTokenExpiry, "hour"));
 
         return response;
     }
