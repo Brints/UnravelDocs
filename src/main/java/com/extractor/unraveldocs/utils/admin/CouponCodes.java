@@ -16,7 +16,7 @@ public class CouponCodes {
         StringBuilder couponCode = new StringBuilder(prefix);
         for (int i = 0; i < 6; i++) {
             int randomIndex = (int) (Math.random() * characters.length());
-            couponCode.append('-').append(characters.charAt(randomIndex));
+            couponCode.append(characters.charAt(randomIndex));
         }
         return couponCode.toString();
     }
