@@ -1,0 +1,35 @@
+name: UnravelDocs CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+        postgres:
+            image: postgres:latest
+            ports:
+            - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+
+    - name: Build and Test
+      run: mvn clean verify
+      env:
+          SPRING_DATABASE_URL: jdbc:postgresql://localhost:5432/postgres
+          SPRING_POSTGRES_USER: postgres
+          SPRING_POSTGRES_PASSWORD: postgres
+          SPRING_POSTGRES_DB: postgres
