@@ -28,14 +28,14 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class SignupUserImpl implements SignupUserService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final UserLibrary userLibrary;
-    private final GenerateVerificationToken verificationToken;
-    private final DateHelper dateHelper;
-    private final AwsS3Service awsS3Service;
     private final AuthEmailTemplateService templatesService;
     private final AuthResponseBuilderService responseBuilder;
+    private final AwsS3Service awsS3Service;
+    private final DateHelper dateHelper;
+    private final GenerateVerificationToken verificationToken;
+    private final PasswordEncoder passwordEncoder;
+    private final UserLibrary userLibrary;
+    private final UserRepository userRepository;
 
     @Transactional
     public SignupUserResponse registerUser(SignUpRequestDto request) {
