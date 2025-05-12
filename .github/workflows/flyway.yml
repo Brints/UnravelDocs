@@ -23,5 +23,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Run Flyway Migrations
+      - name: Apply Flyway Migrations
+        run: mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/postgres -Dflyway.user=postgres -Dflyway.password=postgres
+
+      - name: Validate Migrations
         run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/postgres -Dflyway.user=postgres -Dflyway.password=postgres
