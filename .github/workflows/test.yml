@@ -1,14 +1,33 @@
 name: UnravelDocs CI
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+
     services:
         postgres:
             image: postgres:latest
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: postgres
+              POSTGRES_DB: postgres
             ports:
             - 5432:5432
+
+            options: >-
+              --health-cmd "pg_isready -U postgres"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
 
     steps:
     - name: Checkout code
@@ -25,11 +44,21 @@ jobs:
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
     - name: Build and Test
-      run: mvn clean verify
+      run: mvn clean verify -Ptest
       env:
           SPRING_DATABASE_URL: jdbc:postgresql://localhost:5432/postgres
           SPRING_POSTGRES_USER: postgres
           SPRING_POSTGRES_PASSWORD: postgres
           SPRING_POSTGRES_DB: postgres
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        target: target/surefire-reports
+        retention-days: 7
