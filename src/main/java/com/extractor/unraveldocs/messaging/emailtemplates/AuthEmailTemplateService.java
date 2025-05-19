@@ -13,8 +13,7 @@ public class AuthEmailTemplateService {
     private final MailgunEmailService mailgunEmailService;
 
     @Async
-    public void sendVerificationEmail(String email, String firstName, String lastName, String token,
-                                      String expiration) {
+    public void sendVerificationEmail(String email, String firstName, String lastName, String token, String expiration) {
 
         String baseUrl = "http://localhost:8080";
         String verificationPath = "/api/v1/auth/verify-email";
