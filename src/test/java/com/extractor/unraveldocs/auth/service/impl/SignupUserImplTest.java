@@ -64,12 +64,11 @@ class SignupUserImplTest {
     private SignupUserImpl signupUserService;
 
     private SignUpRequestDto signUpRequest;
-    private LocalDateTime now;
     private LocalDateTime expiryDate;
 
     @BeforeEach
     void setUp() {
-        now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         expiryDate = now.plusHours(3);
 
         signUpRequest = new SignUpRequestDto(
