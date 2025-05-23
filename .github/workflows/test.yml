@@ -54,11 +54,3 @@ jobs:
           SPRING_POSTGRES_USER: postgres
           SPRING_POSTGRES_PASSWORD: postgres
           SPRING_POSTGRES_DB: postgres
-
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        target: target/surefire-reports
-        retention-days: 7
