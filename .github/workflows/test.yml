@@ -19,9 +19,22 @@ jobs:
             env:
               POSTGRES_USER: postgres
               POSTGRES_PASSWORD: postgres
-              POSTGRES_DB: postgres
+              POSTGRES_DB: testdb
             ports:
             - 5432:5432
+            options: >-
+              --health-cmd "pg_isready -U postgres"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+        localstack:
+            image: localstack/localstack:latest
+            ports:
+              - 4566:4566
+              - 4510-4559:4510-4559
+            env:
+              SERVICES: s3
+              DEFAULT_REGION: us-east-1
 
             options: >-
               --health-cmd "pg_isready -U postgres"
@@ -39,6 +52,42 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
+    - name: Set up PostgreSQL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Wait for PostgreSQL
+      run: |
+        for i in {1..60}; do
+          if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Waiting for PostgreSQL...($i/60)"
+          sleep 2
+        done
+
+    - name: Verify PostgreSQL Connection
+      run: |
+        PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d testdb -c 'SELECT 1'
+        if [ $? -eq 0 ]; then
+          echo "PostgreSQL connection successful."
+        else
+          echo "PostgreSQL connection failed."
+          exit 1
+        fi
+
+    - name: Check PostgreSQL status
+      run: |
+        echo "Checking PostgreSQL status..."
+        if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
+          echo "PostgreSQL is running."
+        else
+          echo "PostgreSQL is not running."
+          exit 1
+        fi
+
     - name: Cache Maven Dependencies
       uses: actions/cache@v4
       with:
@@ -47,10 +96,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    - name: Apply Flyway Migrations
+      run: mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+
+    - name: Validate Migrations
+      run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+
     - name: Build and Test
       run: mvn clean verify -Ptest
       env:
-          SPRING_DATABASE_URL: jdbc:postgresql://localhost:5432/postgres
-          SPRING_POSTGRES_USER: postgres
-          SPRING_POSTGRES_PASSWORD: postgres
-          SPRING_POSTGRES_DB: postgres
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+          SPRING_DATASOURCE_DRIVER-CLASS-NAME: org.postgresql.Driver
+          SPRING_JPA_HIBERNATE_DDL-AUTO: validate
+          SPRING_JPA_SHOW_SQL: true
+          SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+          AWS_ENDPOINT_URL: http://localhost:4566
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
