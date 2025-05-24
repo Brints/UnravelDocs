@@ -34,12 +34,6 @@ jobs:
               --health-timeout 5s 
               --health-retries 5
 
-            options: >-
-              --health-cmd "pg_isready -U postgres"
-              --health-interval 10s
-              --health-timeout 5s
-              --health-retries 5
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -101,7 +95,7 @@ jobs:
       run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
 
     - name: Build and Test
-      run: mvn clean verify -Ptest
+      run: mvn clean verify
       env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
           SPRING_DATASOURCE_USERNAME: postgres
