@@ -28,11 +28,19 @@ jobs:
               - 4566:4566
             env:
               SERVICES: s3
+              DEFAULT_REGION: us-east-1
+              EDGE_PORT: 4566
+              LOCALSTACK_HOSTNAME: localstack
+              DOCKER_HOST: unix:///var/run/docker.sock
+              DEBUG: '1'
             options: >-
               --health-cmd "curl -s http://localhost:4566/health | grep s3" 
               --health-interval 10s 
               --health-timeout 5s 
               --health-retries 5
+            volumes:
+                - /var/run/docker.sock:/var/run/docker.sock
+                - localstack-data:/tmp/localstack
 
     steps:
     - name: Checkout code
@@ -107,3 +115,5 @@ jobs:
           AWS_ENDPOINT_URL: http://localhost:4566
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+          AWS_S3_BUCKET: test-bucket
