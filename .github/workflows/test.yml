@@ -1,18 +1,13 @@
 name: UnravelDocs CI-workflow
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     services:
         postgres:
             image: postgres:latest
