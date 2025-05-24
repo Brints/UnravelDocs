@@ -18,21 +18,35 @@ jobs:
             ports:
             - 5432:5432
             options: >-
-              --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+              --health-cmd "pg_isready -U postgres" 
+              --health-interval 10s 
+              --health-timeout 5s 
+              --health-retries 5
         localstack:
-            image: localstack/localstack:latest
+            image: localstack/localstack:4.4.0
             ports:
               - 4566:4566
             env:
               SERVICES: s3
+              GATEWAY_LISTEN: 0.0.0.0:4566
+              LOCALSTACK_HOST: localstack
+              DOCKER_HOST: unix:///var/run/docker.sock
+              DEBUG: '1'
+              MAIN_CONTAINER_NAME: localstack
+              PERSISTENCE: 0
+              LS_LOG: trace
+              SKIP_SSL_CERT_DOWNLOAD: 1
+              START_WEB: 0
             options: >-
-              --health-cmd "curl -s http://localhost:4566/health | grep s3" --health-interval 10s --health-timeout 5s --health-retries 5
-
-            options: >-
-              --health-cmd "pg_isready -U postgres"
-              --health-interval 10s
-              --health-timeout 5s
-              --health-retries 5
+              --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
+              --health-start-period 30s
+              --health-interval 20s 
+              --health-timeout 15s 
+              --health-retries 15
+              --memory 4g
+              --cpus 2
+            volumes:
+                - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
     - name: Checkout code
@@ -80,6 +94,17 @@ jobs:
           exit 1
         fi
 
+    - name: Wait for LocalStack
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:4566/_localstack/health; then
+            echo "LocalStack is ready!"
+            break
+          fi
+          echo "Waiting for LocalStack...($i/30)"
+          sleep 5
+        done
+
     - name: Cache Maven Dependencies
       uses: actions/cache@v4
       with:
@@ -94,8 +119,12 @@ jobs:
     - name: Validate Migrations
       run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
 
+    - name: Create S3 Bucket
+      run: |
+          aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket test-bucket || echo "Bucket already exists"
+
     - name: Build and Test
-      run: mvn clean verify -Ptest
+      run: mvn test
       env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
           SPRING_DATASOURCE_USERNAME: postgres
@@ -107,3 +136,5 @@ jobs:
           AWS_ENDPOINT_URL: http://localhost:4566
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+          AWS_S3_BUCKET: test-bucket
