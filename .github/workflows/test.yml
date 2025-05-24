@@ -1,4 +1,4 @@
-name: UnravelDocs CI
+name: UnravelDocs CI-workflow
 on:
   push:
     branches:
