@@ -124,7 +124,7 @@ jobs:
           aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket test-bucket || echo "Bucket already exists"
 
     - name: Build and Test
-      run: mvn test
+      run: mvn clean verify
       env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
           SPRING_DATASOURCE_USERNAME: postgres
