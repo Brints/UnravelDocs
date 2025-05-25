@@ -31,8 +31,7 @@ public class DeleteUserImpl implements DeleteUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        //LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
-        LocalDateTime deletionDate = LocalDateTime.now().plusMinutes(5);
+        LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
         user.setDeletedAt(deletionDate);
 
         if (user.getUserVerification() != null) {
