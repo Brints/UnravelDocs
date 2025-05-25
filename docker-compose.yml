@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  localstack:
+    image: localstack/localstack:4.4.0
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - GATEWAY_LISTEN=0.0.0.0:4566
+      - LOCALSTACK_HOST=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=1
+      - MAIN_CONTAINER_NAME=localstack
+      - PERSISTENCE=0
+      - LS_LOG=trace
+      - SKIP_SSL_CERT_DOWNLOAD=1
+      - START_WEB=0
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:4566/_localstack/health", "|", "grep", "'\"s3\": \"running\"'"]
+      interval: 15s
+      timeout: 15s
+      retries: 20
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    mem_limit: 4g
+    cpus: '2'
