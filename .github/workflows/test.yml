@@ -97,7 +97,7 @@ jobs:
     - name: Wait for LocalStack
       run: |
         for i in {1..30}; do
-          if curl -f http://localhost:4566/_localstack/health | grep '"s3": "running"'; then
+          if curl -f http://localhost:4566/_localstack/health; then
             echo "LocalStack is ready!"
             break
           fi
