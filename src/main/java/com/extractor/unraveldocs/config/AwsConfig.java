@@ -9,8 +9,11 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.sns.SnsClient;
+
+import java.net.URI;
 
 
 @Configuration
@@ -28,14 +31,23 @@ public class AwsConfig {
     @Value("${aws.from-email}")
     private String awsFromEmail;
 
+    @Value("${aws.s3.endpoint:}")
+    private String s3Endpoint;
+
     @Bean
     public S3Client s3Client() {
         AwsCredentialsProvider awsCredentialsProvider = () -> AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
 
-        return S3Client.builder()
+        S3ClientBuilder s3ClientBuilder = S3Client.builder()
                 .credentialsProvider(awsCredentialsProvider)
-                .region(Region.of(awsRegion))
-                .build();
+                .region(Region.of(awsRegion));
+
+        // If an endpoint is provided, set it on the S3 client builder
+        if (s3Endpoint != null && !s3Endpoint.isBlank()) {
+            s3ClientBuilder.endpointOverride(URI.create(s3Endpoint));
+        }
+
+        return s3ClientBuilder.build();
     }
 
     @Bean
