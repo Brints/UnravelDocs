@@ -93,3 +93,9 @@ jobs:
 
     - name: Build and Test
       run: mvn clean verify
+
+    - name: Upload Surefire Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: surefire-reports
+        path: target/surefire-reports
