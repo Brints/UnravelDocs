@@ -16,86 +16,171 @@ jobs:
       SPRING_JPA_HIBERNATE_DDL-AUTO: validate
       SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: test-bucket
     services:
-        postgres:
-            image: postgres:latest
-            env:
-              POSTGRES_USER: postgres
-              POSTGRES_PASSWORD: postgres
-              POSTGRES_DB: testdb
-            ports:
-            - 5432:5432
-            options: >-
-              --health-cmd "pg_isready -U postgres"
-              --health-interval 10s
-              --health-timeout 5s
-              --health-retries 5
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      localstack:
+        image: localstack/localstack:4.4.0
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: s3
+          GATEWAY_LISTEN: 0.0.0.0:4566
+          LOCALSTACK_HOST: localstack
+          DOCKER_HOST: unix:///var/run/docker.sock
+          DEBUG: '1'
+          MAIN_CONTAINER_NAME: localstack
+          PERSISTENCE: 0
+          LS_LOG: trace
+          SKIP_SSL_CERT_DOWNLOAD: 1
+          START_WEB: 0
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
+          --health-start-period 30s
+          --health-interval 20s 
+          --health-timeout 15s 
+          --health-retries 15
+          --memory 4g
+          --cpus 2
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Set up PostgreSQL
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client
+      - name: Set up PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-    - name: Wait for PostgreSQL
-      run: |
-        for i in {1..30}; do
-          if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
-            echo "PostgreSQL is ready!"
-            break
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..30}; do
+            if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Waiting for PostgreSQL...($i/30)"
+            sleep 2
+          done
+
+      - name: Verify PostgreSQL Connection
+        run: |
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d testdb -c 'SELECT 1'
+          if [ $? -eq 0 ]; then
+            echo "PostgreSQL connection successful."
+          else
+            echo "PostgreSQL connection failed."
+            exit 1
           fi
-          echo "Waiting for PostgreSQL...($i/30)"
-          sleep 2
-        done
 
-    - name: Verify PostgreSQL Connection
-      run: |
-        PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d testdb -c 'SELECT 1'
-        if [ $? -eq 0 ]; then
-          echo "PostgreSQL connection successful."
-        else
-          echo "PostgreSQL connection failed."
-          exit 1
-        fi
+      - name: Check PostgreSQL status
+        run: |
+          echo "Checking PostgreSQL status..."
+          if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
+            echo "PostgreSQL is running."
+          else
+            echo "PostgreSQL is not running."
+            exit 1
+          fi
 
-    - name: Check PostgreSQL status
-      run: |
-        echo "Checking PostgreSQL status..."
-        if PGPASSWORD=postgres pg_isready -h localhost -p 5432 -U postgres; then
-          echo "PostgreSQL is running."
-        else
-          echo "PostgreSQL is not running."
-          exit 1
-        fi
+      - name: Wait for LocalStack
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:4566/_localstack/health; then
+              echo "LocalStack is ready!"
+              break
+            fi
+            echo "Waiting for LocalStack...($i/30)"
+            sleep 5
+          done
+          if [ $i -eq 30 ]; then
+            echo "LocalStack S3 service failed to start."
+            exit 1
+          fi
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+      - name: Create S3 Bucket
+        run: |
+          aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket test-bucket
+          if [ $? -eq 0 ]; then
+            echo "S3 bucket created successfully."
+          else
+              echo "Failed to create S3 bucket."
+              exit 1
+          fi
 
-    - name: Apply Flyway Migrations
-      run: mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+      - name: Verify S3 Bucket Creation
+        run: |
+          aws --endpoint-url=http://localhost:4566 s3api head-bucket --bucket test-bucket
+          if [ $? -eq 0 ]; then
+            echo "S3 bucket test-bucket exists."
+          else
+            echo "S3 bucket test-bucket does not exist."
+            exit 1
+          fi
 
-    - name: Validate Migrations
-      run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+      - name: Test S3 Upload
+        run: |
+          echo "Testing S3 upload..."
+          echo "Hello, World!" > test.txt
+          aws --endpoint-url=http://localhost:4566 s3 cp test.txt s3://test-bucket/test.txt
+          aws --endpoint-url=http://localhost:4566 s3 ls s3://test-bucket/
+          if [ $? -eq 0 ]; then
+            echo "S3 upload test passed."
+          else
+            echo "S3 upload test failed."
+            exit 1
+          fi
 
-    - name: Build and Test
-      run: mvn clean verify
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-    - name: Upload Surefire Reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: surefire-reports
-        path: target/surefire-reports
+      - name: Apply Flyway Migrations
+        run: mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+
+      - name: Validate Migrations
+        run: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/testdb -Dflyway.user=postgres -Dflyway.password=postgres
+
+      - name: Build and Test
+        run: mvn clean verify
+
+      - name: Upload Surefire Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-report
+
+      - name: Capture Localstack Logs
+        if: failure()
+        run: |
+          echo "Capturing Localstack logs..."
+          docker logs localstack > localstack_logs.txt || true
+          echo "Localstack logs captured."
+          cat localstack_logs.txt

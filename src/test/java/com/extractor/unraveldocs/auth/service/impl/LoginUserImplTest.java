@@ -1,12 +1,12 @@
 package com.extractor.unraveldocs.auth.service.impl;
 
-import com.extractor.unraveldocs.auth.dto.LoginUserData;
+import com.extractor.unraveldocs.auth.dto.LoginData;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
-import com.extractor.unraveldocs.auth.service.AuthResponseBuilderService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -39,7 +39,7 @@ public class LoginUserImplTest {
     @Mock
     private AuthenticationManager authenticationManager;
     @Mock
-    private AuthResponseBuilderService responseBuilder;
+    private ResponseBuilderService responseBuilder;
 
     @InjectMocks
     private LoginUserImpl loginUserImpl;
@@ -61,7 +61,7 @@ public class LoginUserImplTest {
         user.setPassword("encodedPassword");
         user.setVerified(true);
 
-        LoginUserData loginUserData = LoginUserData.builder()
+        LoginData data = LoginData.builder()
                 .id("userId")
                 .firstName("John")
                 .lastName("Doe")
@@ -75,18 +75,24 @@ public class LoginUserImplTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        UserLoginResponse expectedResponse = new UserLoginResponse(
-                HttpStatus.OK.value(), "success", "Login successful", loginUserData
-        );
+        UserResponse<LoginData> expectedResponse = new UserResponse<>();
+        expectedResponse.setStatusCode(HttpStatus.OK.value());
+        expectedResponse.setStatus("success");
+        expectedResponse.setMessage("User logged in successfully");
+        expectedResponse.setData(data);
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
         when(jwtTokenProvider.generateToken(user)).thenReturn("jwtToken");
-        when(responseBuilder.buildUserLoginResponse(user, "jwtToken")).thenReturn(expectedResponse);
+        when(responseBuilder.buildUserResponse(
+                any(LoginData.class),
+                eq(HttpStatus.OK),
+                eq("User logged in successfully")
+        )).thenReturn(expectedResponse);
 
-        UserLoginResponse response = loginUserImpl.loginUser(request);
+        UserResponse<LoginData> response = loginUserImpl.loginUser(request);
 
         assertNotNull(response);
         verify(userRepository).save(user);

@@ -1,15 +1,15 @@
 package com.extractor.unraveldocs.auth.controller;
 
+import com.extractor.unraveldocs.auth.dto.LoginData;
+import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
 import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
-import com.extractor.unraveldocs.auth.dto.response.UserLoginResponse;
 import com.extractor.unraveldocs.auth.service.AuthService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -70,11 +70,11 @@ public class AuthController {
                     @ApiResponse(
                             responseCode = "201",
                             description = "User registered successfully",
-                            content = @Content(schema = @Schema(implementation = SignupUserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
                     )
             }
     )
-    public ResponseEntity<SignupUserResponse> register(
+    public ResponseEntity<UserResponse<SignupData>> register(
             @Valid
             @ModelAttribute
             SignUpRequestDto request
@@ -105,11 +105,11 @@ public class AuthController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "User logged in successfully",
-                            content = @Content(schema = @Schema(implementation = UserLoginResponse.class))
+                            content = @Content(schema = @Schema(implementation = LoginData.class))
                     )
             }
     )
-    public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody LoginRequestDto request) {
+    public ResponseEntity<UserResponse<LoginData>> login(@Valid @RequestBody LoginRequestDto request) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.loginUser(request));
     }
 
@@ -122,13 +122,15 @@ public class AuthController {
      */
     @GetMapping(value = "/verify-email", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Verify user email")
-    public ResponseEntity<UserResponse> verifyEmail(
+    public ResponseEntity<UserResponse<Void>> verifyEmail(
             @Schema(description = "Email address of the user to verify", example = "john-doe@test.com")
            @RequestParam String email,
 
             @Schema(description = "Verification token sent to the user's email", example = "1234567890abcdef")
            @RequestParam String token) {
-        return ResponseEntity.status(HttpStatus.OK).body(authService.verifyEmail(email, token));
+
+        UserResponse<Void> response = authService.verifyEmail(email, token);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     /**
@@ -139,9 +141,11 @@ public class AuthController {
      */
     @PostMapping("/resend-verification-email")
     @Operation(summary = "Resend verification email")
-    public ResponseEntity<UserResponse> resendVerificationEmail(
+    public ResponseEntity<UserResponse<Void>> resendVerificationEmail(
             @Valid @RequestBody ResendEmailVerificationDto request
             ) {
-        return ResponseEntity.status(HttpStatus.OK).body(authService.resendEmailVerification(request));
+
+        UserResponse<Void> response = authService.resendEmailVerification(request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

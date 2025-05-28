@@ -8,15 +8,16 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.PasswordResetService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,7 @@ public class PasswordResetImpl implements PasswordResetService {
     private final UserEmailTemplateService userEmailTemplateService;
     private final ResponseBuilderService responseBuilder;
 
-    public UserResponse forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+    public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         String email = forgotPasswordDto.email();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
@@ -76,11 +77,15 @@ public class PasswordResetImpl implements PasswordResetService {
                 expiration
         );
 
-        return responseBuilder.buildResponseWithoutData("Password reset link sent to your email.");
+        return responseBuilder.buildUserResponse(
+                null,
+                HttpStatus.OK,
+                "Password reset link sent to your email."
+        );
     }
 
     @Override
-    public UserResponse resetPassword(IPasswordReset params, ResetPasswordDto request) {
+    public UserResponse<Void> resetPassword(IPasswordReset params, ResetPasswordDto request) {
         String email = params.getEmail();
         String token = params.getToken();
 
@@ -124,6 +129,10 @@ public class PasswordResetImpl implements PasswordResetService {
                 user.getLastName()
         );
 
-        return responseBuilder.buildResponseWithoutData("Password reset successfully.");
+        return responseBuilder.buildUserResponse(
+                null,
+                HttpStatus.OK,
+                "Password reset successfully."
+        );
     }
 }

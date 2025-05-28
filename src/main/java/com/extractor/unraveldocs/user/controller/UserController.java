@@ -1,11 +1,13 @@
 package com.extractor.unraveldocs.user.controller;
 
+import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
@@ -58,7 +60,7 @@ public class UserController {
      */
     @Operation(summary = "Get user profile by ID")
     @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_admin')")
     public ResponseEntity<?> getUserProfileById(
             @Parameter(description = "ID of the user to retrieve")
             @PathVariable String userId
@@ -110,7 +112,7 @@ public class UserController {
      */
     @Operation(summary = "Change password")
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(
+    public ResponseEntity<UserResponse<Void>> changePassword(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @RequestBody ChangePasswordDto changePasswordDto
     ) {
@@ -145,12 +147,16 @@ public class UserController {
                     MediaType.APPLICATION_JSON_VALUE
             }
     )
-    public ResponseEntity<?> updateProfile(
+    public ResponseEntity<UserResponse<UpdateProfileData>> updateProfile(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @ModelAttribute ProfileUpdateRequestDto request
     ) {
         if (authenticatedUser == null) {
             throw new ForbiddenException("Please login to update your profile");
+        }
+
+        if (request == null) {
+            throw new BadRequestException("Request body cannot be null");
         }
 
         String userEmail = authenticatedUser.getUsername();

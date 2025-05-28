@@ -1,8 +1,9 @@
 package com.extractor.unraveldocs.auth.interfaces;
 
+import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 
 public interface SignupUserService {
-   SignupUserResponse registerUser(SignUpRequestDto request);
+   UserResponse<SignupData> registerUser(SignUpRequestDto request);
 }

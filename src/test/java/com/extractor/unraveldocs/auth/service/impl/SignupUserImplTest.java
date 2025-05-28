@@ -1,14 +1,14 @@
 package com.extractor.unraveldocs.auth.service.impl;
 
-import com.extractor.unraveldocs.auth.dto.SignupUserData;
+import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;
-import com.extractor.unraveldocs.auth.service.AuthResponseBuilderService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -40,7 +40,7 @@ class SignupUserImplTest {
     private AuthEmailTemplateService templatesService;
 
     @Mock
-    private AuthResponseBuilderService responseBuilder;
+    private ResponseBuilderService responseBuilder;
 
     @Mock
     private AwsS3Service awsS3Service;
@@ -63,7 +63,7 @@ class SignupUserImplTest {
     @InjectMocks
     private SignupUserImpl signupUserService;
 
-    private SignUpRequestDto signUpRequest;
+    private SignUpRequestDto request;
     private LocalDateTime expiryDate;
 
     @BeforeEach
@@ -71,7 +71,7 @@ class SignupUserImplTest {
         LocalDateTime now = LocalDateTime.now();
         expiryDate = now.plusHours(3);
 
-        signUpRequest = new SignUpRequestDto(
+        request = new SignUpRequestDto(
                 "john",
                 "doe",
                 "john.doe@example.com",
@@ -95,7 +95,7 @@ class SignupUserImplTest {
         user.setRole(Role.USER);
         user.setLastLogin(null);
 
-        SignupUserData userData = SignupUserData.builder()
+        SignupData data = SignupData.builder()
                 .id(String.valueOf(1L))
                 .firstName("John")
                 .lastName("Doe")
@@ -107,12 +107,11 @@ class SignupUserImplTest {
                 .lastLogin(null)
                 .build();
 
-        SignupUserResponse expectedResponse = SignupUserResponse.builder()
-                .statusCode(HttpStatus.CREATED.value())
-                .status("success")
-                .message("User registered successfully")
-                .data(userData)
-                .build();
+        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
+        expectedResponse.setStatus("success");
+        expectedResponse.setMessage("User registered successfully");
+        expectedResponse.setData(data);
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userLibrary.capitalizeFirstLetterOfName("john")).thenReturn("John");
@@ -127,25 +126,27 @@ class SignupUserImplTest {
             savedUser.setId(String.valueOf(1L));
             return savedUser;
         });
-        when(responseBuilder.buildUserSignupResponse(any(User.class))).thenReturn(expectedResponse);
+        when(responseBuilder.buildUserResponse(
+                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
+        )).thenReturn(expectedResponse);
 
         // Act
-        SignupUserResponse response = signupUserService.registerUser(signUpRequest);
+        UserResponse<SignupData> response = signupUserService.registerUser(request);
 
         // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.CREATED.value(), response.statusCode());
-        assertEquals("success", response.status());
-        assertEquals("User registered successfully", response.message());
-        assertNotNull(response.data());
-        assertEquals("John", response.data().firstName());
-        assertEquals("Doe", response.data().lastName());
-        assertEquals("john.doe@example.com", response.data().email());
-        assertEquals(Role.USER, response.data().role());
-        assertFalse(response.data().isVerified());
-        assertFalse(response.data().isActive());
-        assertNull(response.data().lastLogin());
-        assertNull(response.data().profilePicture());
+        assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
+        assertEquals("success", response.getStatus());
+        assertEquals("User registered successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals("John", response.getData().firstName());
+        assertEquals("Doe", response.getData().lastName());
+        assertEquals("john.doe@example.com", response.getData().email());
+        assertEquals(Role.USER, response.getData().role());
+        assertFalse(response.getData().isVerified());
+        assertFalse(response.getData().isActive());
+        assertNull(response.getData().lastLogin());
+        assertNull(response.getData().profilePicture());
 
         verify(userRepository).existsByEmail("john.doe@example.com");
         verify(userLibrary).capitalizeFirstLetterOfName("john");
@@ -156,7 +157,9 @@ class SignupUserImplTest {
         verify(templatesService).sendVerificationEmail(
                 eq("john.doe@example.com"), eq("John"), eq("Doe"), eq("verificationToken"), eq("3"));
         verify(userRepository).save(any(User.class));
-        verify(responseBuilder).buildUserSignupResponse(any(User.class));
+        verify(responseBuilder).buildUserResponse(
+                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
+        );
         verifyNoInteractions(awsS3Service);
     }
 
@@ -174,7 +177,7 @@ class SignupUserImplTest {
         user.setRole(Role.ADMIN);
         user.setLastLogin(null);
 
-        SignupUserData userData = SignupUserData.builder()
+        SignupData data = SignupData.builder()
                 .id(String.valueOf(1L))
                 .firstName("John")
                 .lastName("Doe")
@@ -186,12 +189,11 @@ class SignupUserImplTest {
                 .lastLogin(null)
                 .build();
 
-        SignupUserResponse expectedResponse = SignupUserResponse.builder()
-                .statusCode(HttpStatus.CREATED.value())
-                .status("success")
-                .message("User registered successfully")
-                .data(userData)
-                .build();
+        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
+        expectedResponse.setStatus("success");
+        expectedResponse.setMessage("User registered successfully");
+        expectedResponse.setData(data);
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
@@ -205,15 +207,17 @@ class SignupUserImplTest {
             savedUser.setId(String.valueOf(1L));
             return savedUser;
         });
-        when(responseBuilder.buildUserSignupResponse(any(User.class))).thenReturn(expectedResponse);
+        when(responseBuilder.buildUserResponse(
+                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
+        )).thenReturn(expectedResponse);
 
         // Act
-        SignupUserResponse response = signupUserService.registerUser(signUpRequest);
+        UserResponse<SignupData> response = signupUserService.registerUser(request);
 
         // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.CREATED.value(), response.statusCode());
-        assertEquals(Role.ADMIN, response.data().role());
+        assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
+        assertEquals(Role.ADMIN, response.getData().role());
         verify(userRepository).isFirstUserWithLock();
     }
 
@@ -223,7 +227,7 @@ class SignupUserImplTest {
         when(userRepository.existsByEmail("john.doe@example.com")).thenReturn(true);
 
         // Act & Assert
-        assertThrows(ConflictException.class, () -> signupUserService.registerUser(signUpRequest),
+        assertThrows(ConflictException.class, () -> signupUserService.registerUser(request),
                 "Email already exists");
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
@@ -253,127 +257,128 @@ class SignupUserImplTest {
                 templatesService, responseBuilder, awsS3Service);
     }
 
-//    @Test
-//    void registerUser_WithProfilePicture_SuccessfulUpload() {
-//        // Arrange
-//        MultipartFile profilePicture = new MockMultipartFile(
-//                "profilePicture",
-//                "profile.jpg",
-//                "image/jpeg",
-//                "test image".getBytes()
-//        );
-//        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
-//                "john",
-//                "doe",
-//                "john.doe@example.com",
-//                "P@ssw0rd123",
-//                "P@ssw0rd123",
-//                profilePicture
-//        );
-//
-//        User user = new User();
-//        user.setId(String.valueOf(1L));
-//        user.setFirstName("John");
-//        user.setLastName("Doe");
-//        user.setEmail("john.doe@example.com");
-//        user.setProfilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
-//        user.setVerified(false);
-//        user.setActive(false);
-//        user.setRole(Role.USER);
-//        user.setLastLogin(null);
-//
-//        SignupUserData userData = SignupUserData.builder()
-//                .id(String.valueOf(1L))
-//                .firstName("John")
-//                .lastName("Doe")
-//                .email("john.doe@example.com")
-//                .profilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")
-//                .isVerified(false)
-//                .isActive(false)
-//                .role(Role.USER)
-//                .lastLogin(null)
-//                .build();
-//
-//        SignupUserResponse expectedResponse = SignupUserResponse.builder()
-//                .statusCode(HttpStatus.CREATED.value())
-//                .status("success")
-//                .message("User registered successfully")
-//                .data(userData)
-//                .build();
-//
-//        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-//        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
-//        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-//        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-//        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-//        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-//        when(userRepository.isFirstUserWithLock()).thenReturn(false);
-//        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
-//        when(awsS3Service.uploadFile(profilePicture, "profile_pictures/unique-profile.jpg"))
-//                .thenReturn("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
-//        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-//            User savedUser = invocation.getArgument(0);
-//            savedUser.setId(String.valueOf(1L));
-//            return savedUser;
-//        });
-//        when(responseBuilder.buildUserSignupResponse(any(User.class))).thenReturn(expectedResponse);
-//
-//        // Act
-//        SignupUserResponse response = signupUserService.registerUser(requestWithPicture);
-//
-//        // Assert
-//        assertNotNull(response);
-//        assertEquals(HttpStatus.CREATED.value(), response.statusCode());
-//        assertEquals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg", response.data().profilePicture());
-//        verify(awsS3Service).generateFileName("profile.jpg");
-//        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
-//        verify(userRepository).save(argThat(u ->
-//                u.getProfilePicture().equals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")));
-//    }
+    @Test
+    void registerUser_WithProfilePicture_SuccessfulUpload() {
+        // Arrange
+        MultipartFile profilePicture = new MockMultipartFile(
+                "profilePicture",
+                "profile.jpg",
+                "image/jpeg",
+                "test image".getBytes()
+        );
+        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
+                "john",
+                "doe",
+                "john.doe@example.com",
+                "P@ssw0rd123",
+                "P@ssw0rd123",
+                profilePicture
+        );
 
-//    @Test
-//    void registerUser_ProfilePictureUploadFails_ThrowsBadRequestException() {
-//        // Arrange
-//        MultipartFile profilePicture = new MockMultipartFile(
-//                "profilePicture",
-//                "profile.jpg",
-//                "image/jpeg",
-//                "test image".getBytes()
-//        );
-//        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
-//                "john",
-//                "doe",
-//                "john.doe@example.com",
-//                "P@ssw0rd123",
-//                "P@ssw0rd123",
-//                profilePicture
-//        );
-//
-//        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-//        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John", "Doe");
-//        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-//        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-//        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-//        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
-//        when(awsS3Service.uploadFile(any(), anyString())).thenThrow(new RuntimeException("S3 upload failed"));
-//
-//        // Act & Assert
-//        assertThrows(BadRequestException.class, () -> signupUserService.registerUser(requestWithPicture),
-//                "Failed to upload profile picture");
-//
-//        // Verify only the expected interactions
-//        verify(userRepository).existsByEmail("john.doe@example.com");
-//        verify(userLibrary, times(2)).capitalizeFirstLetterOfName(anyString());
-//        verify(passwordEncoder).encode("P@ssw0rd123");
-//        verify(verificationToken).generateVerificationToken();
-//        verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
-//        verify(awsS3Service).generateFileName("profile.jpg");
-//        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
-//
-//        // Verify no user was saved
-//        verify(userRepository, never()).save(any());
-//        verifyNoInteractions(templatesService, responseBuilder);
-//    }
+        User user = new User();
+        user.setId(String.valueOf(1L));
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        user.setEmail("john.doe@example.com");
+        user.setProfilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
+        user.setVerified(false);
+        user.setActive(false);
+        user.setRole(Role.USER);
+        user.setLastLogin(null);
+
+        SignupData data = SignupData.builder()
+                .id(String.valueOf(1L))
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .profilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")
+                .isVerified(false)
+                .isActive(false)
+                .role(Role.USER)
+                .lastLogin(null)
+                .build();
+
+        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
+        expectedResponse.setStatus("success");
+        expectedResponse.setMessage("User registered successfully");
+        expectedResponse.setData(data);
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
+        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
+        when(userRepository.isFirstUserWithLock()).thenReturn(false);
+        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
+        when(awsS3Service.uploadFile(profilePicture, "profile_pictures/unique-profile.jpg"))
+                .thenReturn("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            savedUser.setId(String.valueOf(1L));
+            return savedUser;
+        });
+        when(responseBuilder.buildUserResponse(
+                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
+        )).thenReturn(expectedResponse);
+
+        // Act
+       UserResponse<SignupData> response = signupUserService.registerUser(requestWithPicture);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
+        assertEquals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg", response.getData().profilePicture());
+        verify(awsS3Service).generateFileName("profile.jpg");
+        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
+        verify(userRepository).save(argThat(u ->
+                u.getProfilePicture().equals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")));
+    }
+
+    @Test
+    void registerUser_ProfilePictureUploadFails_ThrowsBadRequestException() {
+        // Arrange
+        MultipartFile profilePicture = new MockMultipartFile(
+                "profilePicture",
+                "profile.jpg",
+                "image/jpeg",
+                "test image".getBytes()
+        );
+        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
+                "john",
+                "doe",
+                "john.doe@example.com",
+                "P@ssw0rd123",
+                "P@ssw0rd123",
+                profilePicture
+        );
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John", "Doe");
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
+        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
+        when(awsS3Service.uploadFile(any(), anyString())).thenThrow(new RuntimeException("S3 upload failed"));
+
+        // Act & Assert
+        assertThrows(BadRequestException.class, () -> signupUserService.registerUser(requestWithPicture),
+                "Failed to upload profile picture");
+
+        // Verify only the expected interactions
+        verify(userRepository).existsByEmail("john.doe@example.com");
+        verify(userLibrary, times(2)).capitalizeFirstLetterOfName(anyString());
+        verify(passwordEncoder).encode("P@ssw0rd123");
+        verify(verificationToken).generateVerificationToken();
+        verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
+        verify(awsS3Service).generateFileName("profile.jpg");
+        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
+
+        // Verify no user was saved
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(templatesService, responseBuilder);
+    }
 
     @Test
     void registerUser_VerificationDetailsSetCorrectly() {
@@ -389,7 +394,7 @@ class SignupUserImplTest {
         user.setRole(Role.USER);
         user.setLastLogin(null);
 
-        SignupUserData userData = SignupUserData.builder()
+        SignupData data = SignupData.builder()
                 .id(String.valueOf(1L))
                 .firstName("John")
                 .lastName("Doe")
@@ -401,12 +406,11 @@ class SignupUserImplTest {
                 .lastLogin(null)
                 .build();
 
-        SignupUserResponse expectedResponse = SignupUserResponse.builder()
-                .statusCode(HttpStatus.CREATED.value())
-                .status("success")
-                .message("User registered successfully")
-                .data(userData)
-                .build();
+        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
+        expectedResponse.setStatus("success");
+        expectedResponse.setMessage("User registered successfully");
+        expectedResponse.setData(data);
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
@@ -420,10 +424,12 @@ class SignupUserImplTest {
             savedUser.setId(String.valueOf(1L));
             return savedUser;
         });
-        when(responseBuilder.buildUserSignupResponse(any(User.class))).thenReturn(expectedResponse);
+        when(responseBuilder.buildUserResponse(
+                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
+        )).thenReturn(expectedResponse);
 
         // Act
-        signupUserService.registerUser(signUpRequest);
+        signupUserService.registerUser(request);
 
         // Assert
         verify(userRepository).save(argThat(u -> {

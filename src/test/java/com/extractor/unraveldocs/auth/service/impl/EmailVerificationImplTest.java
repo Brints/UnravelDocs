@@ -6,10 +6,10 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,15 +128,18 @@ class EmailVerificationImplTest {
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), eq(expiryDate), eq("hour"))).thenReturn("3");
         when(userRepository.save(any(User.class))).thenReturn(user);
+        when(responseBuilder.buildUserResponse(
+                isNull(), eq(HttpStatus.OK), eq("Verification email sent successfully.")
+        )).thenReturn(new UserResponse<>(HttpStatus.OK.value(), "success", "Verification email sent successfully.", null));
 
         // Act
-        UserResponse response = emailVerificationService.resendEmailVerification(resendRequest);
+        UserResponse<Void> response = emailVerificationService.resendEmailVerification(resendRequest);
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK.value(), response.getStatusCode());
         assertEquals("success", response.getStatus());
-        assertEquals("Verification email resent successfully", response.getMessage());
+        assertEquals("Verification email sent successfully.", response.getMessage());
         assertNull(response.getData());
         verify(userRepository).findByEmail("john.doe@example.com");
         verify(verificationToken).generateVerificationToken();
@@ -151,7 +154,10 @@ class EmailVerificationImplTest {
         }));
         verify(templatesService).sendVerificationEmail(
                 eq("john.doe@example.com"), eq("John"), eq("Doe"), eq("newToken"), eq("3"));
-        verifyNoInteractions(responseBuilder);
+        verify(responseBuilder).buildUserResponse(
+                isNull(), eq(HttpStatus.OK), eq("Verification email sent successfully.")
+        );
+        verifyNoMoreInteractions(responseBuilder);
     }
 
     // Tests for verifyEmail
@@ -222,11 +228,14 @@ class EmailVerificationImplTest {
         userVerification.setEmailVerificationTokenExpiry(expiryDate);
         when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
-        UserResponse expectedResponse = new UserResponse(HttpStatus.OK.value(), "success", "Email verified successfully", null);
-        when(responseBuilder.buildResponseWithoutData("Email verified successfully")).thenReturn(expectedResponse);
+
+        var expectedResponse = new UserResponse<>(HttpStatus.OK.value(), "success", "Email verified successfully", null);
+        when(responseBuilder.buildUserResponse(
+                null, HttpStatus.OK, "Email verified successfully"
+        )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse response = emailVerificationService.verifyEmail("john.doe@example.com", "validToken");
+        UserResponse<Void> response = emailVerificationService.verifyEmail("john.doe@example.com", "validToken");
 
         // Assert
         assertNotNull(response);
@@ -244,7 +253,9 @@ class EmailVerificationImplTest {
                     u.isVerified() &&
                     u.isActive();
         }));
-        verify(responseBuilder).buildResponseWithoutData("Email verified successfully");
+        verify(responseBuilder).buildUserResponse(
+                null, HttpStatus.OK, "Email verified successfully"
+        );
         verifyNoMoreInteractions(userRepository, responseBuilder);
         verifyNoInteractions(verificationToken, dateHelper, templatesService);
     }

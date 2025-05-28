@@ -1,16 +1,16 @@
-package com.extractor.unraveldocs.user.dto.response;
+package com.extractor.unraveldocs.global.response;
 
-import com.extractor.unraveldocs.user.dto.UserData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponse {
+public class UserResponse<T> {
     int statusCode;
     String status;
     String message;
-    UserData data;
+    T data;
 }

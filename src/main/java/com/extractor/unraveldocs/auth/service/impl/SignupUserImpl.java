@@ -1,14 +1,15 @@
 package com.extractor.unraveldocs.auth.service.impl;
 
+import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
-import com.extractor.unraveldocs.auth.dto.response.SignupUserResponse;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.interfaces.SignupUserService;
 import com.extractor.unraveldocs.auth.model.UserVerification;
-import com.extractor.unraveldocs.auth.service.AuthResponseBuilderService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -18,6 +19,7 @@ import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +31,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SignupUserImpl implements SignupUserService {
     private final AuthEmailTemplateService templatesService;
-    private final AuthResponseBuilderService responseBuilder;
+    private final ResponseBuilderService responseBuilder;
     private final AwsS3Service awsS3Service;
     private final DateHelper dateHelper;
     private final GenerateVerificationToken verificationToken;
@@ -38,7 +40,7 @@ public class SignupUserImpl implements SignupUserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public SignupUserResponse registerUser(SignUpRequestDto request) {
+    public UserResponse<SignupData> registerUser(SignUpRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already exists");
         }
@@ -99,6 +101,18 @@ public class SignupUserImpl implements SignupUserService {
                 emailVerificationToken,
                 dateHelper.getTimeLeftToExpiry(now, emailVerificationTokenExpiry, "hour"));
 
-        return responseBuilder.buildUserSignupResponse(user);
+        SignupData signupData = SignupData.builder()
+                .id(user.getId())
+                .profilePicture(user.getProfilePicture())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .lastLogin(user.getLastLogin())
+                .isActive(user.isActive())
+                .isVerified(user.isVerified())
+                .build();
+
+        return responseBuilder.buildUserResponse(signupData, HttpStatus.CREATED, "User registered successfully");
     }
 }

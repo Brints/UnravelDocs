@@ -8,11 +8,11 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,10 +101,12 @@ class PasswordResetImplTest {
         when(generateVerificationToken.generateVerificationToken()).thenReturn("generated-token");
         when(dateHelper.setExpiryDate(any(), anyString(), anyInt())).thenReturn(LocalDateTime.now().plusHours(1));
         when(dateHelper.getTimeLeftToExpiry(any(), any(), anyString())).thenReturn("1 hour");
-        when(responseBuilder.buildResponseWithoutData(anyString())).thenReturn(new UserResponse());
+        when(responseBuilder.buildUserResponse(
+                any(), any(), anyString()
+        )).thenReturn(new UserResponse<>());
 
         // Act
-        UserResponse response = passwordResetService.forgotPassword(forgotPasswordDto);
+        UserResponse<Void> response = passwordResetService.forgotPassword(forgotPasswordDto);
 
         // Assert
         assertNotNull(response);
@@ -157,10 +159,12 @@ class PasswordResetImplTest {
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
         when(passwordEncoder.matches(resetPasswordDto.newPassword(), user.getPassword())).thenReturn(false);
         when(passwordEncoder.encode(resetPasswordDto.newPassword())).thenReturn("encoded-password");
-        when(responseBuilder.buildResponseWithoutData(anyString())).thenReturn(new UserResponse());
+        when(responseBuilder.buildUserResponse(
+                any(), any(), anyString()
+        )).thenReturn(new UserResponse<>());
 
         // Act
-        UserResponse response = passwordResetService.resetPassword(passwordResetParams, resetPasswordDto);
+        UserResponse<Void> response = passwordResetService.resetPassword(passwordResetParams, resetPasswordDto);
 
         // Assert
         assertNotNull(response);
