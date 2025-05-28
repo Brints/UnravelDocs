@@ -5,13 +5,14 @@ import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ChangePasswordService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,7 @@ public class ChangePasswordImpl implements ChangePasswordService {
     private final ResponseBuilderService responseBuilder;
 
     @Override
-    public UserResponse changePassword(IPasswordReset params, ChangePasswordDto request) {
+    public UserResponse<Void> changePassword(IPasswordReset params, ChangePasswordDto request) {
         String email = params.getEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
@@ -51,6 +52,7 @@ public class ChangePasswordImpl implements ChangePasswordService {
 
         userEmailTemplateService.sendSuccessfulPasswordChange(email, user.getFirstName(), user.getLastName());
 
-        return responseBuilder.buildResponseWithoutData("Password changed successfully.");
+        return responseBuilder
+                .buildUserResponse(null, HttpStatus.OK, "Password changed successfully.");
     }
 }

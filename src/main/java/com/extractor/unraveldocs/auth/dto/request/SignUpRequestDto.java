@@ -24,6 +24,10 @@ public record SignUpRequestDto(
         @Schema(description = "Email address of the user", example = "johndoe@example.com")
         @NotNull(message = "Email is required")
         @Email(message = "Please enter a valid email address")
+        @Pattern(
+                regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+                message = "Email must be a valid email address format"
+        )
         @Size(max = 100, message = "Email must be less than 100 characters")
         String email,
 

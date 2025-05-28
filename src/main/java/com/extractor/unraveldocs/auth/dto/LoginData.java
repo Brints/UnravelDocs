@@ -6,15 +6,17 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record SignupUserData(
+public record LoginData(
         String id,
-        String profilePicture,
         String firstName,
         String lastName,
         String email,
         Role role,
         LocalDateTime lastLogin,
         boolean isActive,
-        boolean isVerified
+        boolean isVerified,
+        String accessToken,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

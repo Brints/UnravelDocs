@@ -2,14 +2,16 @@ package com.extractor.unraveldocs.user.service.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ProfileUpdateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +27,7 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
 
     @Override
     @Transactional
-    public UserResponse updateProfile(ProfileUpdateRequestDto request, String userId) {
+    public UserResponse<UpdateProfileData> updateProfile(ProfileUpdateRequestDto request, String userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
         if (optionalUser.isEmpty()) {
@@ -58,6 +60,23 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
 
         User updatedUser = userRepository.save(user);
 
-        return responseBuilder.buildUserResponse(updatedUser, "Profile updated successfully");
+        UpdateProfileData data = getProfileData(updatedUser);
+
+        return responseBuilder.buildUserResponse(data, HttpStatus.OK, "Profile updated successfully");
+    }
+
+    private static UpdateProfileData getProfileData(User updatedUser) {
+        UpdateProfileData data = new UpdateProfileData();
+        data.setId(updatedUser.getId());
+        data.setProfilePicture(updatedUser.getProfilePicture());
+        data.setFirstName(updatedUser.getFirstName());
+        data.setLastName(updatedUser.getLastName());
+        data.setEmail(updatedUser.getEmail());
+        data.setRole(updatedUser.getRole());
+        data.setLastLogin(updatedUser.getLastLogin());
+        data.setVerified(updatedUser.isVerified());
+        data.setCreatedAt(updatedUser.getCreatedAt());
+        data.setUpdatedAt(updatedUser.getUpdatedAt());
+        return data;
     }
 }

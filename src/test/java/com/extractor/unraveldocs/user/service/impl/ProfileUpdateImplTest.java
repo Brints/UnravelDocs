@@ -2,10 +2,11 @@ package com.extractor.unraveldocs.user.service.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
@@ -43,6 +45,7 @@ class ProfileUpdateImplTest {
     void updateProfile_shouldUpdateFirstNameAndLastName() {
         String userId = "user123";
         User user = new User();
+        user.setId(userId);
         user.setFirstName("John");
         user.setLastName("Doe");
 
@@ -55,9 +58,10 @@ class ProfileUpdateImplTest {
         when(userLibrary.capitalizeFirstLetterOfName("Jane")).thenReturn("Jane");
         when(userLibrary.capitalizeFirstLetterOfName("Smith")).thenReturn("Smith");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-        when(responseBuilder.buildUserResponse(any(User.class), anyString())).thenReturn(new UserResponse());
+        when(responseBuilder.buildUserResponse(any(UpdateProfileData.class), eq(HttpStatus.OK), anyString()))
+                .thenReturn(new UserResponse<>());
 
-        UserResponse response = profileUpdateImpl.updateProfile(request, userId);
+        UserResponse<UpdateProfileData> response = profileUpdateImpl.updateProfile(request, userId);
 
         assertNotNull(response);
         assertEquals("Jane", user.getFirstName());
@@ -79,11 +83,13 @@ class ProfileUpdateImplTest {
     void updateProfile_shouldUpdateProfilePicture() {
         String userId = "user123";
         User user = new User();
+        user.setId(userId);
         user.setFirstName("John");
         user.setLastName("Doe");
         user.setProfilePicture("old-url");
 
         MultipartFile mockFile = mock(MultipartFile.class);
+        when(mockFile.isEmpty()).thenReturn(false);
         when(mockFile.getOriginalFilename()).thenReturn("profile.jpg");
 
         ProfileUpdateRequestDto request = mock(ProfileUpdateRequestDto.class);
@@ -95,9 +101,10 @@ class ProfileUpdateImplTest {
         when(awsS3Service.generateFileName("profile.jpg")).thenReturn("new-profile.jpg");
         when(awsS3Service.uploadFile(mockFile, "new-profile.jpg")).thenReturn("new-url");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-        when(responseBuilder.buildUserResponse(any(User.class), anyString())).thenReturn(new UserResponse());
+        when(responseBuilder.buildUserResponse(any(UpdateProfileData.class), eq(HttpStatus.OK), anyString()))
+                .thenReturn(new UserResponse<>());
 
-        UserResponse response = profileUpdateImpl.updateProfile(request, userId);
+        UserResponse<UpdateProfileData> response = profileUpdateImpl.updateProfile(request, userId);
 
         assertNotNull(response);
         assertEquals("new-url", user.getProfilePicture());
@@ -109,6 +116,7 @@ class ProfileUpdateImplTest {
     void updateProfile_shouldNotUpdateIfNoChanges() {
         String userId = "user123";
         User user = new User();
+        user.setId(userId);
         user.setFirstName("John");
         user.setLastName("Doe");
 
@@ -119,9 +127,10 @@ class ProfileUpdateImplTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-        when(responseBuilder.buildUserResponse(any(User.class), anyString())).thenReturn(new UserResponse());
+        when(responseBuilder.buildUserResponse(any(UpdateProfileData.class), eq(HttpStatus.OK), anyString()))
+                .thenReturn(new UserResponse<>());
 
-        UserResponse response = profileUpdateImpl.updateProfile(request, userId);
+        UserResponse<UpdateProfileData> response = profileUpdateImpl.updateProfile(request, userId);
 
         assertNotNull(response);
         assertEquals("John", user.getFirstName());

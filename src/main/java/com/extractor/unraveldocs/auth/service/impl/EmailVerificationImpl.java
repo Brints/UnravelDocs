@@ -7,10 +7,10 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
-import com.extractor.unraveldocs.user.dto.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.user.service.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     private final AuthEmailTemplateService templatesService;
     private final ResponseBuilderService responseBuilder;
 
-    public UserResponse resendEmailVerification(ResendEmailVerificationDto request) {
+    public UserResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 
@@ -57,12 +57,6 @@ public class EmailVerificationImpl implements EmailVerificationService {
 
         userRepository.save(user);
 
-        UserResponse response = new UserResponse();
-        response.setStatusCode(HttpStatus.OK.value());
-        response.setStatus("success");
-        response.setMessage("Verification email resent successfully");
-        response.setData(null); // No data to return
-
         // TODO: Send email with the verification token (implementation not shown)
         templatesService.sendVerificationEmail(user.getEmail(),
                 user.getFirstName(),
@@ -70,11 +64,12 @@ public class EmailVerificationImpl implements EmailVerificationService {
                 emailVerificationToken,
                 dateHelper.getTimeLeftToExpiry(now, emailVerificationTokenExpiry, "hour"));
 
-        return response;
+        return responseBuilder.buildUserResponse(
+                null, HttpStatus.OK, "Verification email sent successfully.");
     }
 
     @Transactional
-    public UserResponse verifyEmail(String email, String token) {
+    public UserResponse<Void> verifyEmail(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 
@@ -103,6 +98,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
 
         userRepository.save(user);
 
-        return responseBuilder.buildResponseWithoutData("Email verified successfully");
+        return responseBuilder.buildUserResponse(
+                null, HttpStatus.OK, "Email verified successfully");
     }
 }
