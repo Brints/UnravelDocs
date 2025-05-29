@@ -1,7 +1,10 @@
 package com.extractor.unraveldocs.user.repository;
 
+import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.user.model.User;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +18,31 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+
+    @Query("SELECT u FROM User u WHERE " +
+            "(:search IS NULL OR " +
+            "LOWER(CAST(u.firstName AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
+            "LOWER(CAST(u.lastName AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
+            "LOWER(CAST(u.email AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) AND " +
+            "(:firstName IS NULL OR LOWER(CAST(u.firstName AS string)) LIKE LOWER(CONCAT('%', CAST(:firstName AS string), '%'))) AND " +
+            "(:lastName IS NULL OR LOWER(CAST(u.lastName AS string)) LIKE LOWER(CONCAT('%', CAST(:lastName AS string), '%'))) AND " +
+            "(:email IS NULL OR LOWER(CAST(u.email AS string)) LIKE LOWER(CONCAT('%', CAST(:email AS string), '%'))) AND " +
+            "(:role IS NULL OR u.role = :role) AND " +
+            "(:isActive IS NULL OR u.isActive = :isActive) AND " +
+            "(:isVerified IS NULL OR u.isVerified = :isVerified) AND " +
+            "u.deletedAt IS NULL")
+    Page<User> findAllUsers(
+            @Param("search") String search,
+            @Param("firstName") String firstName,
+            @Param("lastName") String lastName,
+            @Param("email") String email,
+            @Param("role") Role role,
+            @Param("isActive") Boolean isActive,
+            @Param("isVerified") Boolean isVerified,
+            Pageable pageable
+    );
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT COUNT(u) = 0 FROM User u")

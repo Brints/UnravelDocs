@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -28,6 +29,14 @@ public class GlobalExceptionHandler {
             } else {
                 // Handle class-level constraints like @PasswordMatches
                 fieldName = error.getObjectName().equals("signUpRequestDto") ? "confirmPassword" : error.getObjectName();
+            }
+
+            if ("role".equals(fieldName) && Objects.requireNonNull(error.getCode()).startsWith("typeMismatch")) {
+                assert error instanceof FieldError;
+                Object rejectedValue = ((FieldError) error).getRejectedValue();
+                // Special handling for role validation errors
+                errorMessage = "Invalid role: [" + rejectedValue + "]. Valid roles are: user, moderator, admin, " +
+                        "super_admin";
             }
             errors.put(fieldName, errorMessage);
         });

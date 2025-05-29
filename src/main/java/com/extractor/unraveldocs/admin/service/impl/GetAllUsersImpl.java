@@ -1,0 +1,84 @@
+package com.extractor.unraveldocs.admin.service.impl;
+
+import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
+import com.extractor.unraveldocs.admin.dto.response.UserListData;
+import com.extractor.unraveldocs.admin.dto.response.UserSummary;
+import com.extractor.unraveldocs.admin.interfaces.GetAllUsersService;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
+import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.user.model.User;
+import com.extractor.unraveldocs.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class GetAllUsersImpl implements GetAllUsersService {
+    private final UserRepository userRepository;
+    private final ResponseBuilderService responseBuilder;
+
+    @Override
+    public UserResponse<UserListData> getAllUsers(UserFilterDto request) {
+        // Create Pageable object with sorting
+        Sort sort = Sort.by(Sort.Direction.fromString(request.getSortOrder()), request.getSortBy());
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
+
+        // Fetch users from the repository with filtering
+        Page<User> userPage = userRepository.findAllUsers(
+                request.getSearch(),
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail(),
+                request.getRole(),
+                request.getIsActive(),
+                request.getIsVerified(),
+                pageable
+        );
+
+        // Convert User entities to UserSummary DTOs
+        List<UserSummary> userSummaries = userPage.stream()
+                .map(this::convertToUserData)
+                .collect(Collectors.toList());
+
+        // Set pagination details in the response
+        UserListData userListData = new UserListData();
+        userListData.setUsers(userSummaries);
+        userListData.setTotalUsers((int) userPage.getTotalElements());
+        userListData.setTotalPages(userPage.getTotalPages());
+        userListData.setCurrentPage(userPage.getNumber());
+        userListData.setPageSize(userPage.getSize());
+
+        // Build and return the response
+        return responseBuilder.buildUserResponse(
+                userListData,
+                HttpStatus.OK,
+                "Successfully fetched all users."
+        );
+
+    }
+
+    private UserSummary convertToUserData(User user) {
+        UserSummary userSummary = new UserSummary();
+        userSummary.setId(user.getId());
+        userSummary.setProfilePicture(user.getProfilePicture());
+        userSummary.setFirstName(user.getFirstName());
+        userSummary.setLastName(user.getLastName());
+        userSummary.setEmail(user.getEmail());
+        userSummary.setRole(user.getRole());
+        userSummary.setActive(user.isActive());
+        userSummary.setVerified(user.isVerified());
+        userSummary.setLastLogin(user.getLastLogin());
+        userSummary.setCreatedAt(user.getCreatedAt());
+        userSummary.setUpdatedAt(user.getUpdatedAt());
+
+        return userSummary;
+    }
+}
