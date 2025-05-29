@@ -2,20 +2,21 @@ package com.extractor.unraveldocs.admin.controller;
 
 import com.extractor.unraveldocs.admin.dto.AdminData;
 import com.extractor.unraveldocs.admin.dto.request.ChangeRoleDto;
+import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
+import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.service.AdminService;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
@@ -41,6 +42,37 @@ public class AdminController {
         }
 
         UserResponse<AdminData> response = adminService.changeUserRole(request, authenticatedUser);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get a paginated list of all users with optional filtering and sorting.
+     *
+     * @param request         The request containing filter and pagination parameters.
+     * @param authentication  The current user's authentication details.
+     * @return ResponseEntity containing the list of users and pagination details.
+     */
+    @Operation(
+            summary = "Get all users",
+            description = "Fetches a paginated list of all users with optional filtering and sorting.")
+    @GetMapping("/users")
+    public ResponseEntity<UserResponse<UserListData>> getAllUsers(
+            @Valid @ModelAttribute UserFilterDto request,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            throw new ForbiddenException("You must be logged in to view users");
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_admin") || auth.getAuthority().equals(
+                        "ROLE_super_admin"));
+        if (!isAdmin) {
+            throw new ForbiddenException("Only admins can view users");
+        }
+
+        UserResponse<UserListData> response = adminService.getAllUsers(request);
 
         return ResponseEntity.ok(response);
     }

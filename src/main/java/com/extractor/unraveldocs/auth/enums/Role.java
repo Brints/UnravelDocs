@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.auth.enums;
 
+import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import lombok.Getter;
 
 @Getter
@@ -22,10 +23,14 @@ public enum Role {
 
     public static Role fromString(String role) {
         for (Role r : Role.values()) {
-            if (r.getRole().equalsIgnoreCase(role)) {
+            if (r.role.equalsIgnoreCase(role)) {
                 return r;
             }
         }
-        throw new IllegalArgumentException("No enum constant " + Role.class.getCanonicalName() + "." + role);
+        throw new BadRequestException("[" + role + "] is not a valid enum.");
+    }
+
+    public static String[] getValidRoles() {
+        return new String[]{USER.role, MODERATOR.role, ADMIN.role, SUPER_ADMIN.role};
     }
 }

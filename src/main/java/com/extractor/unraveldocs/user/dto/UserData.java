@@ -19,7 +19,6 @@ public class UserData {
     Role role;
     LocalDateTime lastLogin;
     boolean isVerified;
-    String generatedPassword;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
