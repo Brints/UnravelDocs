@@ -40,11 +40,7 @@ public class ChangeUserRoleImpl implements ChangeUserRoleService {
         if (!user.isVerified()) {
             throw new ForbiddenException("Cannot change role for unverified users");
         }
-        if (user.getRole() == Role.ADMIN || user.getRole() == Role.MODERATOR) {
-            throw new ForbiddenException("Cannot change role for admin users");
-        }
 
-        // Change the user's role to ADMIN or MODERATOR
         user.setRole(request.getRole());
         userRepository.save(user);
 
