@@ -88,7 +88,7 @@ public class SignupUserImpl implements SignupUserService {
         user.setProfilePicture(profilePictureUrl);
         user.setActive(false);
         user.setVerified(false);
-        user.setRole(userCount ? Role.ADMIN : Role.USER);
+        user.setRole(userCount ? Role.SUPER_ADMIN : Role.USER);
         user.setLastLogin(null);
         user.setUserVerification(userVerification);
 

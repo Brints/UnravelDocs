@@ -35,8 +35,7 @@ public class AdminController {
             summary = "Change user role to ADMIN or MODERATOR",
             description = "Allows an admin to change the role of a user to ADMIN or MODERATOR.")
     @PutMapping("/change-role")
-    public ResponseEntity<UserResponse<AdminData>> changeUserRole(Authentication authenticatedUser,
-                                                                  @RequestBody ChangeRoleDto request) {
+    public ResponseEntity<UserResponse<AdminData>> changeUserRole(Authentication authenticatedUser, @RequestBody ChangeRoleDto request) {
         if (authenticatedUser == null) {
             throw new ForbiddenException("You must be logged in to change user roles");
         }
