@@ -38,6 +38,7 @@ public class MailgunEmailService {
         }
     }
 
+    @Deprecated
     public void sendWithAttachment(String to, String subject, String body, File attachment) {
         Message message = Message.builder()
                 .from(mailgunConfig.getMailgunFromEmail())

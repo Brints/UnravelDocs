@@ -1,6 +1,7 @@
 package com.extractor.unraveldocs.user.dto;
 
 import com.extractor.unraveldocs.auth.enums.Role;
+import com.extractor.unraveldocs.global.request.UserDataProjection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,15 +11,15 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserData {
-    String id;
-    String profilePicture;
-    String firstName;
-    String lastName;
-    String email;
-    Role role;
-    LocalDateTime lastLogin;
-    boolean isVerified;
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
+public class UserData implements UserDataProjection {
+    private String id;
+    private String profilePicture;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private Role role;
+    private LocalDateTime lastLogin;
+    private boolean isVerified;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

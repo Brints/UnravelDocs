@@ -10,7 +10,7 @@ public class GenerateVerificationToken {
     private final SecureRandom random = new SecureRandom();
 
     public String generateVerificationToken() {
-        byte[] token = new byte[32];
+        byte[] token = new byte[40];
         random.nextBytes(token);
         return new BigInteger(1, token).toString(16);
     }

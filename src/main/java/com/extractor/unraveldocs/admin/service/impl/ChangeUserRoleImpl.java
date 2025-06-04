@@ -3,7 +3,6 @@ package com.extractor.unraveldocs.admin.service.impl;
 import com.extractor.unraveldocs.admin.dto.AdminData;
 import com.extractor.unraveldocs.admin.dto.request.ChangeRoleDto;
 import com.extractor.unraveldocs.admin.interfaces.ChangeUserRoleService;
-import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.exceptions.custom.UnauthorizedException;
@@ -15,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+
+import static com.extractor.unraveldocs.global.response.ResponseData.getResponseData;
 
 @Service
 @RequiredArgsConstructor
@@ -45,27 +46,12 @@ public class ChangeUserRoleImpl implements ChangeUserRoleService {
         userRepository.save(user);
 
 
-        AdminData data = getResponseData(user);
+        AdminData data = getResponseData(user, AdminData::new);
 
         return responseBuilder.buildUserResponse(
                 data,
                 HttpStatus.OK,
                 "User role changed successfully."
         );
-    }
-
-    private static AdminData getResponseData(User user) {
-        AdminData data = new AdminData();
-        data.setId(user.getId());
-        data.setProfilePicture(user.getProfilePicture());
-        data.setFirstName(user.getFirstName());
-        data.setLastName(user.getLastName());
-        data.setEmail(user.getEmail());
-        data.setRole(user.getRole());
-        data.setLastLogin(user.getLastLogin());
-        data.setVerified(user.isVerified());
-        data.setCreatedAt(user.getCreatedAt());
-        data.setUpdatedAt(user.getUpdatedAt());
-        return data;
     }
 }
