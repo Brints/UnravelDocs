@@ -1,8 +1,8 @@
 package com.extractor.unraveldocs.user.service.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
-import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ProfileUpdateService;
 import com.extractor.unraveldocs.user.model.User;
@@ -17,17 +17,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import static com.extractor.unraveldocs.global.response.ResponseData.getResponseData;
+
 @Service
 @RequiredArgsConstructor
 public class ProfileUpdateImpl implements ProfileUpdateService {
-    private final UserRepository userRepository;
     private final AwsS3Service awsS3Service;
     private final ResponseBuilderService responseBuilder;
     private final UserLibrary userLibrary;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public UserResponse<UpdateProfileData> updateProfile(ProfileUpdateRequestDto request, String userId) {
+    public UserResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
         if (optionalUser.isEmpty()) {
@@ -60,23 +62,8 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
 
         User updatedUser = userRepository.save(user);
 
-        UpdateProfileData data = getProfileData(updatedUser);
+        UserData data = getResponseData(updatedUser, UserData::new);
 
         return responseBuilder.buildUserResponse(data, HttpStatus.OK, "Profile updated successfully");
-    }
-
-    private static UpdateProfileData getProfileData(User updatedUser) {
-        UpdateProfileData data = new UpdateProfileData();
-        data.setId(updatedUser.getId());
-        data.setProfilePicture(updatedUser.getProfilePicture());
-        data.setFirstName(updatedUser.getFirstName());
-        data.setLastName(updatedUser.getLastName());
-        data.setEmail(updatedUser.getEmail());
-        data.setRole(updatedUser.getRole());
-        data.setLastLogin(updatedUser.getLastLogin());
-        data.setVerified(updatedUser.isVerified());
-        data.setCreatedAt(updatedUser.getCreatedAt());
-        data.setUpdatedAt(updatedUser.getUpdatedAt());
-        return data;
     }
 }

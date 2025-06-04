@@ -6,7 +6,6 @@ import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
 import com.extractor.unraveldocs.global.response.UserResponse;
-import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.*;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +42,7 @@ public class UserService {
         return changePasswordService.changePassword(params, request);
     }
 
-    public UserResponse<UpdateProfileData> updateProfile(ProfileUpdateRequestDto request, String userId) {
+    public UserResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {
         return profileUpdateService.updateProfile(request, userId);
     }
 

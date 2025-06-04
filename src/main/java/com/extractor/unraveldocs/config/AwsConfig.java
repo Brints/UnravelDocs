@@ -31,7 +31,7 @@ public class AwsConfig {
     @Value("${aws.from-email}")
     private String awsFromEmail;
 
-    @Value("${aws.s3.endpoint:}")
+    @Value("${aws.s3.endpoint}")
     private String s3Endpoint;
 
     @Bean

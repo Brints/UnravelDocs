@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import static com.extractor.unraveldocs.global.response.ResponseData.getResponseData;
+
 @Service
 @RequiredArgsConstructor
 public class UserProfileImpl implements UserProfileService {
@@ -23,7 +25,7 @@ public class UserProfileImpl implements UserProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        UserData data = getUserData(user);
+        UserData data = getResponseData(user, UserData::new);
 
         return responseBuilder.buildUserResponse(
                 data,
@@ -38,27 +40,12 @@ public class UserProfileImpl implements UserProfileService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        UserData data = getUserData(user);
+        UserData data = getResponseData(user, UserData::new);
 
         return responseBuilder.buildUserResponse(
                 data,
                 HttpStatus.OK,
                 "User profile retrieved successfully"
         );
-    }
-
-    private static UserData getUserData(User user) {
-        UserData data = new UserData();
-        data.setId(user.getId());
-        data.setProfilePicture(user.getProfilePicture());
-        data.setFirstName(user.getFirstName());
-        data.setLastName(user.getLastName());
-        data.setEmail(user.getEmail());
-        data.setLastLogin(user.getLastLogin());
-        data.setRole(user.getRole());
-        data.setVerified(user.isVerified());
-        data.setCreatedAt(user.getCreatedAt());
-        data.setUpdatedAt(user.getUpdatedAt());
-        return data;
     }
 }

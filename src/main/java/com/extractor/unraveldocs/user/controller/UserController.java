@@ -2,12 +2,12 @@ package com.extractor.unraveldocs.user.controller;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
+import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
 import com.extractor.unraveldocs.global.response.UserResponse;
-import com.extractor.unraveldocs.user.dto.response.UpdateProfileData;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
@@ -147,7 +147,7 @@ public class UserController {
                     MediaType.APPLICATION_JSON_VALUE
             }
     )
-    public ResponseEntity<UserResponse<UpdateProfileData>> updateProfile(
+    public ResponseEntity<UserResponse<UserData>> updateProfile(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @ModelAttribute ProfileUpdateRequestDto request
     ) {
