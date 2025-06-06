@@ -47,6 +47,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT COUNT(u) = 0 FROM User u")
     boolean isFirstUserWithLock();
 
+    @Query("SELECT COUNT(u) = 0 FROM User u WHERE u.role = com.extractor.unraveldocs.auth.enums.Role.SUPER_ADMIN")
+    boolean superAdminExists();
+
     @Query("SELECT u FROM User u WHERE u.lastLogin < :threshold AND u.deletedAt IS NULL")
     List<User> findAllByLastLoginDateBefore(@Param("threshold") LocalDateTime threshold);
 

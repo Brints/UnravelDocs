@@ -2,6 +2,7 @@ package com.extractor.unraveldocs.user.model;
 
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.model.UserVerification;
+import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -52,8 +53,10 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "user_verification_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private LoginAttempts loginAttempts;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserVerification userVerification;
 
     @CreationTimestamp
