@@ -9,6 +9,7 @@ import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
+import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,7 +50,12 @@ public class UserController {
             throw new ForbiddenException("Please login to view your profile");
         }
 
-        return ResponseEntity.ok(userService.getAuthenticatedUserProfile(authenticatedUser.getUsername()));
+        // Call the user service to get the profile data
+        User user = userRepository.findByEmail(authenticatedUser.getUsername())
+                .orElseThrow(() -> new ForbiddenException("User not found"));
+        String userId = user.getId();
+
+        return ResponseEntity.ok(userService.getUserProfileByOwner(userId));
     }
 
     /**
@@ -65,7 +71,7 @@ public class UserController {
             @Parameter(description = "ID of the user to retrieve")
             @PathVariable String userId
     ) {
-        return ResponseEntity.ok(userService.getUserProfileById(userId));
+        return ResponseEntity.ok(userService.getUserProfileByAdmin(userId));
     }
 
     /**

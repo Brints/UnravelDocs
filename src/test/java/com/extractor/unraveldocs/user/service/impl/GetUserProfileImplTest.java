@@ -20,7 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class UserProfileImplTest {
+class GetUserProfileImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -29,7 +29,7 @@ class UserProfileImplTest {
     private ResponseBuilderService responseBuilder;
 
     @InjectMocks
-    private UserProfileImpl userProfile;
+    private GetUserProfileImpl userProfile;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +49,7 @@ class UserProfileImplTest {
         when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), eq("User profile retrieved successfully")))
                 .thenReturn(userResponse);
 
-        UserResponse<UserData> result = userProfile.getUserProfileById(userId);
+        UserResponse<UserData> result = userProfile.getUserProfileByAdmin(userId);
 
         assertEquals(userResponse, result);
     }
@@ -59,7 +59,7 @@ class UserProfileImplTest {
         String userId = "123";
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileById(userId));
+        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByAdmin(userId));
         verify(userRepository).findById(userId);
     }
 
@@ -76,7 +76,7 @@ class UserProfileImplTest {
         when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), eq("User profile retrieved successfully")))
                 .thenReturn(userResponse);
 
-        UserResponse<UserData> result = userProfile.getAuthenticatedUserProfile(email);
+        UserResponse<UserData> result = userProfile.getUserProfileByOwner(email);
 
         assertEquals(userResponse, result);
     }
@@ -86,7 +86,7 @@ class UserProfileImplTest {
         String email = "test@example.com";
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> userProfile.getAuthenticatedUserProfile(email));
+        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByOwner(email));
         verify(userRepository).findByEmail(email);
     }
 

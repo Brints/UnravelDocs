@@ -16,18 +16,18 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserProfileService userProfileService;
+    private final GetUserProfileService getUserProfileService;
     private final PasswordResetService passwordResetService;
     private final ChangePasswordService changePasswordService;
     private final ProfileUpdateService profileUpdateService;
     private final DeleteUserService deleteUserService;
 
-    public UserResponse<UserData> getAuthenticatedUserProfile(String email) {
-        return userProfileService.getAuthenticatedUserProfile(email);
+    public UserResponse<UserData> getUserProfileByOwner(String userId) {
+        return getUserProfileService.getUserProfileByOwner(userId);
     }
 
-    public UserResponse<UserData> getUserProfileById(String userId) {
-        return userProfileService.getUserProfileById(userId);
+    public UserResponse<UserData> getUserProfileByAdmin(String userId) {
+        return getUserProfileService.getUserProfileByAdmin(userId);
     }
 
     public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
