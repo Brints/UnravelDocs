@@ -10,11 +10,13 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +33,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SignupUserImpl implements SignupUserService {
     private final AuthEmailTemplateService templatesService;
+    private final CloudinaryService cloudinaryService;
     private final ResponseBuilderService responseBuilder;
-    private final AwsS3Service awsS3Service;
+//    private final AwsS3Service awsS3Service;
     private final DateHelper dateHelper;
     private final GenerateVerificationToken verificationToken;
     private final PasswordEncoder passwordEncoder;
@@ -58,22 +61,28 @@ public class SignupUserImpl implements SignupUserService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now,"hour", 3);
 
-        boolean userCount = userRepository.isFirstUserWithLock();
-
-        UserVerification userVerification = new UserVerification();
-        userVerification.setEmailVerificationToken(emailVerificationToken);
-        userVerification.setStatus(VerifiedStatus.PENDING);
-        userVerification.setEmailVerificationTokenExpiry(emailVerificationTokenExpiry);
-        userVerification.setEmailVerified(false);
-        userVerification.setPasswordResetToken(null);
-        userVerification.setPasswordResetTokenExpiry(null);
+        //boolean userCount = userRepository.isFirstUserWithLock();
+        boolean noSuperAdmin = userRepository.superAdminExists();
+        Role role = noSuperAdmin ? Role.SUPER_ADMIN : Role.USER;
 
         String profilePictureUrl = null;
 
+//        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
+//            try {
+//                String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
+//                profilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
+//            } catch (Exception e) {
+//                log.error("Error uploading profile picture: {}", e.getMessage());
+//                throw new BadRequestException("Failed to upload profile picture");
+//            }
+//        }
+
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             try {
-                String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
-                profilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
+                profilePictureUrl = cloudinaryService.uploadFile(
+                        request.profilePicture(), "profile_pictures",
+                        request.profilePicture().getOriginalFilename(),
+                        "image");
             } catch (Exception e) {
                 log.error("Error uploading profile picture: {}", e.getMessage());
                 throw new BadRequestException("Failed to upload profile picture");
@@ -88,9 +97,24 @@ public class SignupUserImpl implements SignupUserService {
         user.setProfilePicture(profilePictureUrl);
         user.setActive(false);
         user.setVerified(false);
-        user.setRole(userCount ? Role.SUPER_ADMIN : Role.USER);
+        user.setRole(role);
         user.setLastLogin(null);
+
+        UserVerification userVerification = new UserVerification();
+        userVerification.setEmailVerificationToken(emailVerificationToken);
+        userVerification.setStatus(VerifiedStatus.PENDING);
+        userVerification.setEmailVerificationTokenExpiry(emailVerificationTokenExpiry);
+        userVerification.setEmailVerified(false);
+        userVerification.setPasswordResetToken(null);
+        userVerification.setPasswordResetTokenExpiry(null);
+        userVerification.setUser(user);
+
         user.setUserVerification(userVerification);
+
+        LoginAttempts loginAttempts = new LoginAttempts();
+        loginAttempts.setUser(user);
+
+        user.setLoginAttempts(loginAttempts);
 
         userRepository.save(user);
 
