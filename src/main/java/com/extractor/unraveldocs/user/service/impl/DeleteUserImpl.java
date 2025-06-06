@@ -9,6 +9,7 @@ import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +73,10 @@ public class DeleteUserImpl implements DeleteUserService {
     @Override
     @Transactional
     @Scheduled(cron = "0 0 1 * * ?")
+    @CacheEvict(
+            value = {"getAllUsers", "getProfileByAdmin", "getProfileByUser"},
+            allEntries = true
+    )
     public void processScheduledDeletions() {
         log.info("Processing scheduled deletions...");
         LocalDateTime threshold = LocalDateTime.now();
@@ -96,6 +101,10 @@ public class DeleteUserImpl implements DeleteUserService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = {"getAllUsers", "getProfileByAdmin", "getProfileByUser"},
+            allEntries = true
+    )
     public void deleteUser(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));

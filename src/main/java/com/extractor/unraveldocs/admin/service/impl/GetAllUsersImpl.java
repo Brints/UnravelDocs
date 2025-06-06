@@ -9,6 +9,8 @@ import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,14 @@ public class GetAllUsersImpl implements GetAllUsersService {
     private final ResponseBuilderService responseBuilder;
 
     @Override
+    @Cacheable(
+            value = "getAllUsers",
+            key = "#request.page + '-' + #request.size + '-' + #request.sortBy + '-' + #request.sortOrder + '-' + #request.search + '-' + #request.firstName + '-' + #request.lastName + '-' + #request.email + '-' + #request.role + '-' + #request.isActive + '-' + #request.isVerified"
+    )
+    @CacheEvict(
+            value = "getAllUsers",
+            allEntries = true
+    )
     public UserResponse<UserListData> getAllUsers(UserFilterDto request) {
         // Create Pageable object with sorting
         Sort sort = Sort.by(Sort.Direction.fromString(request.getSortOrder()), request.getSortBy());

@@ -11,6 +11,7 @@ import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
 
     @Override
     @Transactional
+    @CachePut(value = {"getProfileByUser", "getProfileByAdmin"}, key = "#userId")
     public UserResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
