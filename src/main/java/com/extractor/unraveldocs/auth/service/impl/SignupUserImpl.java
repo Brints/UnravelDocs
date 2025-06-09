@@ -15,7 +15,6 @@ import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateServi
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
@@ -35,7 +34,6 @@ public class SignupUserImpl implements SignupUserService {
     private final AuthEmailTemplateService templatesService;
     private final CloudinaryService cloudinaryService;
     private final ResponseBuilderService responseBuilder;
-//    private final AwsS3Service awsS3Service;
     private final DateHelper dateHelper;
     private final GenerateVerificationToken verificationToken;
     private final PasswordEncoder passwordEncoder;
@@ -61,22 +59,10 @@ public class SignupUserImpl implements SignupUserService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now,"hour", 3);
 
-        //boolean userCount = userRepository.isFirstUserWithLock();
         boolean noSuperAdmin = userRepository.superAdminExists();
         Role role = noSuperAdmin ? Role.SUPER_ADMIN : Role.USER;
 
         String profilePictureUrl = null;
-
-//        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
-//            try {
-//                String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
-//                profilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
-//            } catch (Exception e) {
-//                log.error("Error uploading profile picture: {}", e.getMessage());
-//                throw new BadRequestException("Failed to upload profile picture");
-//            }
-//        }
-
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             try {
                 profilePictureUrl = cloudinaryService.uploadFile(

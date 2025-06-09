@@ -31,15 +31,35 @@ class GetUserProfileImplTest {
     @InjectMocks
     private GetUserProfileImpl userProfile;
 
+    private User user;
+    private String userId;
+    private String userEmail;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        userId = "123";
+        userEmail = "test@example.com"; // Keep for user object creation, but use userId for service call
+        user = createUser();
+    }
+
+    private User createUser() {
+        User u = new User();
+        u.setId(userId);
+        u.setProfilePicture("pic.png");
+        u.setFirstName("John");
+        u.setLastName("Doe");
+        u.setEmail(userEmail);
+        u.setLastLogin(LocalDateTime.now());
+        u.setRole(Role.USER);
+        u.setVerified(true);
+        u.setCreatedAt(LocalDateTime.now().minusDays(1));
+        u.setUpdatedAt(LocalDateTime.now());
+        return u;
     }
 
     @Test
     void getUserProfileById_UserExists_ReturnsUserResponse() {
-        String userId = "123"; // Must match getUser().getId()
-        User user = getUser();
         UserResponse<UserData> userResponse = new UserResponse<>();
         userResponse.setStatusCode(HttpStatus.OK.value());
         userResponse.setStatus("success");
@@ -52,11 +72,11 @@ class GetUserProfileImplTest {
         UserResponse<UserData> result = userProfile.getUserProfileByAdmin(userId);
 
         assertEquals(userResponse, result);
+        verify(userRepository).findById(userId);
     }
 
     @Test
     void getUserProfileById_UserNotFound_ThrowsNotFoundException() {
-        String userId = "123";
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByAdmin(userId));
@@ -65,44 +85,26 @@ class GetUserProfileImplTest {
 
     @Test
     void getAuthenticatedUserProfile_UserExists_ReturnsUserResponse() {
-        String email = "test@example.com"; // Must match getUser().getEmail()
-        User user = getUser();
         UserResponse<UserData> userResponse = new UserResponse<>();
         userResponse.setStatusCode(HttpStatus.OK.value());
         userResponse.setStatus("success");
         userResponse.setMessage("User profile retrieved successfully");
 
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), eq("User profile retrieved successfully")))
                 .thenReturn(userResponse);
 
-        UserResponse<UserData> result = userProfile.getUserProfileByOwner(email);
+        UserResponse<UserData> result = userProfile.getUserProfileByOwner(userId);
 
         assertEquals(userResponse, result);
+        verify(userRepository).findById(userId);
     }
 
     @Test
     void getAuthenticatedUserProfile_UserNotFound_ThrowsNotFoundException() {
-        String email = "test@example.com";
-        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByOwner(email));
-        verify(userRepository).findByEmail(email);
-    }
-
-    // Helper methods to create User and UserData objects
-    private User getUser() {
-        User user = new User();
-        user.setId("123");
-        user.setProfilePicture("pic.png");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("test@example.com");
-        user.setLastLogin(LocalDateTime.now());
-        user.setRole(Role.USER);
-        user.setVerified(true);
-        user.setCreatedAt(LocalDateTime.now().minusDays(1));
-        user.setUpdatedAt(LocalDateTime.now());
-        return user;
+        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByOwner(userId));
+        verify(userRepository).findById(userId); // Verify findById was called
     }
 }

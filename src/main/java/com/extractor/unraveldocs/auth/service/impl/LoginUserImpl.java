@@ -12,30 +12,36 @@ import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginUserImpl implements LoginUserService {
-    private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final ResponseBuilderService responseBuilder;
+    private final JwtTokenProvider jwtTokenProvider;
     private final LoginAttemptsService loginAttemptsService;
+    private final ResponseBuilderService responseBuilder;
+    private final UserRepository userRepository;
 
     public UserResponse<LoginData> loginUser(LoginRequestDto request) {
         Optional<User> userOpt = userRepository.findByEmail(request.email());
+        log.info("User from repository: {}", userOpt.orElse(null));
 
-        userOpt.ifPresent(loginAttemptsService::checkIfUserBlocked);
+        //userOpt.ifPresent(loginAttemptsService::checkIfUserBlocked);
+        userOpt.ifPresent(user -> {
+            log.info("Checking if user is blocked: {}", user);
+            loginAttemptsService.checkIfUserBlocked(user);
+        });
 
         Authentication authentication;
         try {

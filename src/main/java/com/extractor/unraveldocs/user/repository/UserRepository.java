@@ -43,9 +43,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     );
 
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT COUNT(u) = 0 FROM User u")
-    boolean isFirstUserWithLock();
+//    @Lock(LockModeType.PESSIMISTIC_WRITE)
+//    @Query("SELECT COUNT(u) = 0 FROM User u")
+//    boolean isFirstUserWithLock();
 
     @Query("SELECT COUNT(u) = 0 FROM User u WHERE u.role = com.extractor.unraveldocs.auth.enums.Role.SUPER_ADMIN")
     boolean superAdminExists();
