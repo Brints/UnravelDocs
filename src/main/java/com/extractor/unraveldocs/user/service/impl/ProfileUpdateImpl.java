@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.user.service.impl;
 
+import com.cloudinary.Cloudinary;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
@@ -23,7 +24,7 @@ import static com.extractor.unraveldocs.global.response.ResponseData.getResponse
 @Service
 @RequiredArgsConstructor
 public class ProfileUpdateImpl implements ProfileUpdateService {
-    private final AwsS3Service awsS3Service;
+    private final Cloudinary
     private final ResponseBuilderService responseBuilder;
     private final UserLibrary userLibrary;
     private final UserRepository userRepository;
