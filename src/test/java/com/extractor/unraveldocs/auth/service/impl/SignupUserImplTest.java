@@ -9,11 +9,12 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class SignupUserImplTest {
     private ResponseBuilderService responseBuilder;
 
     @Mock
-    private AwsS3Service awsS3Service;
+    private CloudinaryService cloudinaryService;
 
     @Mock
     private DateHelper dateHelper;
@@ -120,7 +121,7 @@ class SignupUserImplTest {
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-        when(userRepository.isFirstUserWithLock()).thenReturn(false);
+        when(userRepository.superAdminExists()).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -160,11 +161,11 @@ class SignupUserImplTest {
         verify(responseBuilder).buildUserResponse(
                 any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
         );
-        verifyNoInteractions(awsS3Service);
+        verifyNoInteractions(cloudinaryService);
     }
 
     @Test
-    void registerUser_FirstUser_SetsAdminRole() {
+    void registerUser_FirstUser_SetsSuperAdminRole() {
         // Arrange
         User user = new User();
         user.setId(String.valueOf(1L));
@@ -174,7 +175,7 @@ class SignupUserImplTest {
         user.setProfilePicture(null);
         user.setVerified(false);
         user.setActive(false);
-        user.setRole(Role.ADMIN);
+        user.setRole(Role.SUPER_ADMIN);
         user.setLastLogin(null);
 
         SignupData data = SignupData.builder()
@@ -185,7 +186,7 @@ class SignupUserImplTest {
                 .profilePicture(null)
                 .isVerified(false)
                 .isActive(false)
-                .role(Role.ADMIN)
+                .role(Role.SUPER_ADMIN)
                 .lastLogin(null)
                 .build();
 
@@ -201,7 +202,7 @@ class SignupUserImplTest {
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-        when(userRepository.isFirstUserWithLock()).thenReturn(true);
+        when(userRepository.superAdminExists()).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -217,8 +218,8 @@ class SignupUserImplTest {
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
-        assertEquals(Role.ADMIN, response.getData().role());
-        verify(userRepository).isFirstUserWithLock();
+        assertEquals(Role.SUPER_ADMIN, response.getData().role());
+        verify(userRepository).superAdminExists();
     }
 
     @Test
@@ -232,7 +233,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder, awsS3Service);
+                templatesService, responseBuilder, cloudinaryService);
     }
 
     @Test
@@ -254,7 +255,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder, awsS3Service);
+                templatesService, responseBuilder, cloudinaryService);
     }
 
     @Test
@@ -280,7 +281,7 @@ class SignupUserImplTest {
         user.setFirstName("John");
         user.setLastName("Doe");
         user.setEmail("john.doe@example.com");
-        user.setProfilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
+        user.setProfilePicture("https://cloudinary.com/images/profile_pictures/unique-profile.jpg");
         user.setVerified(false);
         user.setActive(false);
         user.setRole(Role.USER);
@@ -291,7 +292,7 @@ class SignupUserImplTest {
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
-                .profilePicture("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")
+                .profilePicture("https://cloudinary.com/images/profile_pictures/unique-profile.jpg")
                 .isVerified(false)
                 .isActive(false)
                 .role(Role.USER)
@@ -310,10 +311,11 @@ class SignupUserImplTest {
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-        when(userRepository.isFirstUserWithLock()).thenReturn(false);
-        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
-        when(awsS3Service.uploadFile(profilePicture, "profile_pictures/unique-profile.jpg"))
-                .thenReturn("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg");
+        when(userRepository.superAdminExists()).thenReturn(false);
+        when(cloudinaryService.uploadFile(
+                eq(profilePicture), eq("profile_pictures"),
+                eq(profilePicture.getOriginalFilename()), eq("image")))
+                .thenReturn("https://cloudinary.com/images/profile_pictures/unique-profile.jpg");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -324,16 +326,17 @@ class SignupUserImplTest {
         )).thenReturn(expectedResponse);
 
         // Act
-       UserResponse<SignupData> response = signupUserService.registerUser(requestWithPicture);
+        UserResponse<SignupData> response = signupUserService.registerUser(requestWithPicture);
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
-        assertEquals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg", response.getData().profilePicture());
-        verify(awsS3Service).generateFileName("profile.jpg");
-        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
+        assertEquals("https://cloudinary.com/images/profile_pictures/unique-profile.jpg", response.getData().profilePicture());
+        verify(cloudinaryService).uploadFile(
+                eq(profilePicture), eq("profile_pictures"),
+                eq(profilePicture.getOriginalFilename()), eq("image"));
         verify(userRepository).save(argThat(u ->
-                u.getProfilePicture().equals("https://s3.amazonaws.com/bucket/profile_pictures/unique-profile.jpg")));
+                u.getProfilePicture().equals("https://cloudinary.com/images/profile_pictures/unique-profile.jpg")));
     }
 
     @Test
@@ -359,8 +362,10 @@ class SignupUserImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("profile_pictures/unique-profile.jpg");
-        when(awsS3Service.uploadFile(any(), anyString())).thenThrow(new RuntimeException("S3 upload failed"));
+        when(cloudinaryService.uploadFile(
+                eq(profilePicture), eq("profile_pictures"),
+                eq(profilePicture.getOriginalFilename()), eq("image")))
+                .thenThrow(new RuntimeException("Cloudinary upload failed"));
 
         // Act & Assert
         assertThrows(BadRequestException.class, () -> signupUserService.registerUser(requestWithPicture),
@@ -372,8 +377,9 @@ class SignupUserImplTest {
         verify(passwordEncoder).encode("P@ssw0rd123");
         verify(verificationToken).generateVerificationToken();
         verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
-        verify(awsS3Service).generateFileName("profile.jpg");
-        verify(awsS3Service).uploadFile(profilePicture, "profile_pictures/unique-profile.jpg");
+        verify(cloudinaryService).uploadFile(
+                eq(profilePicture), eq("profile_pictures"),
+                eq(profilePicture.getOriginalFilename()), eq("image"));
 
         // Verify no user was saved
         verify(userRepository, never()).save(any());
@@ -381,44 +387,15 @@ class SignupUserImplTest {
     }
 
     @Test
-    void registerUser_VerificationDetailsSetCorrectly() {
+    void registerUser_VerificationDetailsAndLoginAttemptsSetCorrectly() {
         // Arrange
-        User user = new User();
-        user.setId(String.valueOf(1L));
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john.doe@example.com");
-        user.setProfilePicture(null);
-        user.setVerified(false);
-        user.setActive(false);
-        user.setRole(Role.USER);
-        user.setLastLogin(null);
-
-        SignupData data = SignupData.builder()
-                .id(String.valueOf(1L))
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .profilePicture(null)
-                .isVerified(false)
-                .isActive(false)
-                .role(Role.USER)
-                .lastLogin(null)
-                .build();
-
-        UserResponse<SignupData> expectedResponse = new UserResponse<>();
-        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
-        expectedResponse.setStatus("success");
-        expectedResponse.setMessage("User registered successfully");
-        expectedResponse.setData(data);
-
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
         when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-        when(userRepository.isFirstUserWithLock()).thenReturn(false);
+        when(userRepository.superAdminExists()).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -426,20 +403,28 @@ class SignupUserImplTest {
         });
         when(responseBuilder.buildUserResponse(
                 any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
-        )).thenReturn(expectedResponse);
+        )).thenReturn(any());
 
         // Act
         signupUserService.registerUser(request);
 
         // Assert
         verify(userRepository).save(argThat(u -> {
+            // Verify UserVerification properties
             UserVerification verification = u.getUserVerification();
-            return verification.getEmailVerificationToken().equals("verificationToken") &&
+            boolean verificationCorrect = verification.getEmailVerificationToken().equals("verificationToken") &&
                     verification.getStatus() == VerifiedStatus.PENDING &&
                     verification.getEmailVerificationTokenExpiry().equals(expiryDate) &&
                     !verification.isEmailVerified() &&
                     verification.getPasswordResetToken() == null &&
                     verification.getPasswordResetTokenExpiry() == null;
+
+            // Verify LoginAttempts is created and associated with the user
+            LoginAttempts loginAttempts = u.getLoginAttempts();
+            boolean loginAttemptsCorrect = loginAttempts != null &&
+                    loginAttempts.getUser() == u;
+
+            return verificationCorrect && loginAttemptsCorrect;
         }));
     }
 }
