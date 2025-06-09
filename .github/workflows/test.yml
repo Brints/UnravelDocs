@@ -1,7 +1,5 @@
 name: UnravelDocs CI-workflow
 on:
-  push:
-    branches: [main, dev]
   pull_request:
     branches: [main, dev]
 
