@@ -1,0 +1,66 @@
+name: Release Versioning
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for git describe and log to work correctly
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+
+      - name: Bump version and tag
+        run: |
+          set -e
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          mvn versions:set -DnewVersion=$NEW_VERSION
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "chore(release): $NEW_VERSION"
+          git tag "UnravelDocs v$NEW_VERSION"
+          git push origin main --tags
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          set -e
+          git fetch --tags
+          # Assuming the new tag (v$NEW_VERSION) was just pushed, 
+          # we want the tag before that for the changelog.
+          # If no tags exist besides the new one, this might need adjustment or error handling.
+          LATEST_TAG=$(git describe --tags --abbrev=0 HEAD~1^) || LATEST_TAG=$(git rev-list --max-parents=0 HEAD)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          # The range should be from the LATEST_TAG to the commit *before* the release commit (HEAD^)
+          # The release commit itself is HEAD.
+          CHANGELOG=$(git log $LATEST_TAG..HEAD^ --pretty=format:"* %s")
+          echo "$CHANGELOG" > changelog.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: UnravelDocs v${{ env.NEW_VERSION }}
+          name: Release UnravelDocs v${{ env.NEW_VERSION }}
+          body_path: changelog.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
