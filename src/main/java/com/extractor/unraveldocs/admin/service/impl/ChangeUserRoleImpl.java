@@ -26,7 +26,6 @@ public class ChangeUserRoleImpl implements ChangeUserRoleService {
     @Override
     public UserResponse<AdminData> changeUserRole(ChangeRoleDto request, Authentication authentication) {
         String userId = request.getUserId();
-        System.out.println("Changing role for user ID: " + userId);
 
         // Admin or Super Admin check
         if (authentication.getAuthorities().stream()
