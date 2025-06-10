@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java', 'sql' ]
+        language: [ 'java' ]
 
     steps:
       - name: Checkout repository
@@ -32,7 +32,7 @@ jobs:
         if: ${{ matrix.language == 'java' }}
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Cache Maven packages
