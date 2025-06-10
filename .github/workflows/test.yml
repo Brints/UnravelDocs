@@ -16,7 +16,7 @@ jobs:
       SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
-      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }} # Or a non-secret value if it's not sensitive
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
       CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
       CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
       APP_JWT_SECRET: test-secret-1234567890-1234567890-1234567890
@@ -95,7 +95,7 @@ jobs:
         run: mvn clean verify -Dspring.profiles.active=test
 
       - name: Upload Surefire Report
-        if: always() # Upload report even if tests fail
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: surefire-report
