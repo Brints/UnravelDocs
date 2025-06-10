@@ -129,7 +129,7 @@ public class LoginUserImplTest {
 
         verify(loginAttemptsService).checkIfUserBlocked(user);
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository, times(2)).findByEmail(anyString());
+        verify(userRepository, times(2)).findByEmail(eq("test@example.com")); // Adjusted for clarity
         verify(loginAttemptsService).resetLoginAttempts(user);
         verify(jwtTokenProvider).generateToken(user);
         verify(userRepository).save(user);
@@ -179,19 +179,22 @@ public class LoginUserImplTest {
     @Test
     void loginUser_authenticatedUserNotFoundInRepository_throwsForbiddenException() {
         // Arrange
-        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.of(user));
+        String userEmail = loginRequest.email();
+
+        when(userRepository.findByEmail(eq(userEmail)))
+                .thenReturn(Optional.of(user))     // First call for userOpt
+                .thenReturn(Optional.empty());    // Second call for authenticatedUser
+
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
-        when(userRepository.findByEmail(principal.getUsername())).thenReturn(Optional.empty());
 
         // Act & Assert
         ForbiddenException exception = assertThrows(ForbiddenException.class, () -> loginUserImpl.loginUser(loginRequest));
         assertEquals("Authenticated user not found in repository.", exception.getMessage());
 
-        verify(loginAttemptsService).checkIfUserBlocked(any(User.class));
+        verify(loginAttemptsService).checkIfUserBlocked(user); // or any(User.class)
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository).findByEmail(loginRequest.email());
-        verify(userRepository).findByEmail(principal.getUsername());
+        verify(userRepository, times(2)).findByEmail(eq(userEmail));
         verify(loginAttemptsService, never()).recordFailedLoginAttempt(any(User.class));
         verify(loginAttemptsService, never()).resetLoginAttempts(any(User.class));
     }
@@ -225,12 +228,16 @@ public class LoginUserImplTest {
         blockedUser.setId("blockedUserId");
 
         when(userRepository.findByEmail(blockedLoginRequest.email())).thenReturn(Optional.of(blockedUser));
-        doThrow(new ForbiddenException("Your account is temporarily locked."))
+        String expectedMessage = """
+            Your account is temporarily locked due to multiple failed login attempts.
+            Please try again after 1 day.
+            """;
+        doThrow(new ForbiddenException(expectedMessage))
                 .when(loginAttemptsService).checkIfUserBlocked(blockedUser);
 
         // Act & Assert
         ForbiddenException exception = assertThrows(ForbiddenException.class, () -> loginUserImpl.loginUser(blockedLoginRequest));
-        assertEquals("Your account is temporarily locked.", exception.getMessage());
+        assertEquals(expectedMessage, exception.getMessage());
 
         verify(userRepository).findByEmail(blockedLoginRequest.email());
         verify(loginAttemptsService).checkIfUserBlocked(blockedUser);
