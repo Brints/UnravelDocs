@@ -1,4 +1,3 @@
-// src/test/java/com/extractor/unraveldocs/user/service/impl/DeleteUserImplTest.java
 package com.extractor.unraveldocs.user.service.impl;
 
 import com.extractor.unraveldocs.auth.model.UserVerification;
@@ -7,7 +6,7 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService; // Updated import
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -24,7 +23,7 @@ class DeleteUserImplTest {
     @Mock
     private UserVerificationRepository userVerificationRepository;
     @Mock
-    private AwsS3Service awsS3Service;
+    private CloudinaryService cloudinaryService;
     @Mock
     private UserEmailTemplateService userEmailTemplateService;
 
@@ -94,7 +93,7 @@ class DeleteUserImplTest {
 
         deleteUserImpl.processScheduledDeletions();
 
-        verify(awsS3Service).deleteFile("pic.jpg");
+        verify(cloudinaryService).deleteFile("pic.jpg"); // Updated to cloudinaryService
         verify(userVerificationRepository).delete(verification);
         verify(userRepository).deleteAll(usersToDelete);
     }
@@ -111,7 +110,7 @@ class DeleteUserImplTest {
 
         deleteUserImpl.deleteUser("5");
 
-        verify(awsS3Service).deleteFile("pic2.jpg");
+        verify(cloudinaryService).deleteFile("pic2.jpg"); // Updated to cloudinaryService
         verify(userVerificationRepository).delete(verification);
         verify(userRepository).delete(user);
     }
