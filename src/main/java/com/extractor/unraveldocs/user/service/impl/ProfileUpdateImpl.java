@@ -10,6 +10,7 @@ import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CachePut;
@@ -24,7 +25,7 @@ import static com.extractor.unraveldocs.global.response.ResponseData.getResponse
 @Service
 @RequiredArgsConstructor
 public class ProfileUpdateImpl implements ProfileUpdateService {
-    private final Cloudinary
+    private final CloudinaryService cloudinaryService;
     private final ResponseBuilderService responseBuilder;
     private final UserLibrary userLibrary;
     private final UserRepository userRepository;
@@ -55,12 +56,19 @@ public class ProfileUpdateImpl implements ProfileUpdateService {
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
 
             if (user.getProfilePicture() != null) {
-                awsS3Service.deleteFile(user.getProfilePicture());
+                cloudinaryService.deleteFile(user.getProfilePicture());
             }
 
-            String fileName = awsS3Service.generateFileName(request.profilePicture().getOriginalFilename());
-            newProfilePictureUrl = awsS3Service.uploadFile(request.profilePicture(), fileName);
-            user.setProfilePicture(newProfilePictureUrl);
+            try {
+                newProfilePictureUrl = cloudinaryService.uploadFile(
+                        request.profilePicture(),
+                        CloudinaryService.getPROFILE_PICTURE_FOLDER(),
+                        request.profilePicture().getOriginalFilename(),
+                        CloudinaryService.getRESOURCE_TYPE_IMAGE());
+                user.setProfilePicture(newProfilePictureUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload profile picture: " + e.getMessage(), e);
+            }
         }
 
         User updatedUser = userRepository.save(user);

@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class ProfileUpdateImplTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private AwsS3Service awsS3Service;
+    private CloudinaryService cloudinaryService;
     @Mock
     private ResponseBuilderService responseBuilder;
     @Mock
@@ -80,7 +80,7 @@ class ProfileUpdateImplTest {
     }
 
     @Test
-    void updateProfile_shouldUpdateProfilePicture() {
+    void updateProfile_shouldUpdateProfilePicture() throws Exception {
         String userId = "user123";
         User user = new User();
         user.setId(userId);
@@ -98,8 +98,13 @@ class ProfileUpdateImplTest {
         when(request.profilePicture()).thenReturn(mockFile);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(awsS3Service.generateFileName("profile.jpg")).thenReturn("new-profile.jpg");
-        when(awsS3Service.uploadFile(mockFile, "new-profile.jpg")).thenReturn("new-url");
+        doNothing().when(cloudinaryService).deleteFile("old-url");
+        when(cloudinaryService.uploadFile(
+                eq(mockFile),
+                anyString(),
+                eq("profile.jpg"),
+                anyString()
+        )).thenReturn("new-url");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
         when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), anyString()))
                 .thenReturn(new UserResponse<>());
@@ -108,8 +113,13 @@ class ProfileUpdateImplTest {
 
         assertNotNull(response);
         assertEquals("new-url", user.getProfilePicture());
-        verify(awsS3Service).deleteFile("old-url");
-        verify(awsS3Service).uploadFile(mockFile, "new-profile.jpg");
+        verify(cloudinaryService).deleteFile("old-url");
+        verify(cloudinaryService).uploadFile(
+                eq(mockFile),
+                anyString(),
+                eq("profile.jpg"),
+                anyString()
+        );
     }
 
     @Test

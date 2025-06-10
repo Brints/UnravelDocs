@@ -17,7 +17,6 @@ public class AWSEmailService {
         this.awsConfig = awsConfig;
     }
 
-    @Deprecated
     public void sendSimpleEmail(String to, String subject, String body) {
         SendEmailRequest sendEmailRequest = SendEmailRequest.builder()
                 .destination(d -> d.toAddresses(to))
@@ -35,7 +34,6 @@ public class AWSEmailService {
         }
     }
 
-    @Deprecated
     public void sendHtmlEmail(String to, String subject, String htmlBody) {
         SendEmailRequest sendEmailRequest = SendEmailRequest.builder()
                 .destination(d -> d.toAddresses(to))
