@@ -33,10 +33,10 @@ import java.time.LocalDateTime;
 public class SignupUserImpl implements SignupUserService {
     private final AuthEmailTemplateService templatesService;
     private final CloudinaryService cloudinaryService;
-    private final ResponseBuilderService responseBuilder;
     private final DateHelper dateHelper;
     private final GenerateVerificationToken verificationToken;
     private final PasswordEncoder passwordEncoder;
+    private final ResponseBuilderService responseBuilder;
     private final UserLibrary userLibrary;
     private final UserRepository userRepository;
 
@@ -66,9 +66,10 @@ public class SignupUserImpl implements SignupUserService {
         if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
             try {
                 profilePictureUrl = cloudinaryService.uploadFile(
-                        request.profilePicture(), "profile_pictures",
+                        request.profilePicture(),
+                        CloudinaryService.getPROFILE_PICTURE_FOLDER(),
                         request.profilePicture().getOriginalFilename(),
-                        "image");
+                        CloudinaryService.getRESOURCE_TYPE_IMAGE());
             } catch (Exception e) {
                 log.error("Error uploading profile picture: {}", e.getMessage());
                 throw new BadRequestException("Failed to upload profile picture");

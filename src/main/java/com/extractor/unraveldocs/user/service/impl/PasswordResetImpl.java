@@ -26,12 +26,12 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class PasswordResetImpl implements PasswordResetService {
-    private final UserRepository userRepository;
-    private final GenerateVerificationToken generateVerificationToken;
     private final DateHelper dateHelper;
+    private final GenerateVerificationToken generateVerificationToken;
     private final PasswordEncoder passwordEncoder;
-    private final UserEmailTemplateService userEmailTemplateService;
     private final ResponseBuilderService responseBuilder;
+    private final UserEmailTemplateService userEmailTemplateService;
+    private final UserRepository userRepository;
 
     public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         String email = forgotPasswordDto.email();

@@ -15,9 +15,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class LoginAttemptsImpl implements LoginAttemptsService {
-    private final LoginAttemptsRepository loginAttemptsRepository;
     private static final int MAX_LOGIN_ATTEMPTS = 4;
     private static final int LOCKOUT_DURATION_DAYS = 5;
+    private final LoginAttemptsRepository loginAttemptsRepository;
 
     @Override
     public void checkIfUserBlocked(User user) {
