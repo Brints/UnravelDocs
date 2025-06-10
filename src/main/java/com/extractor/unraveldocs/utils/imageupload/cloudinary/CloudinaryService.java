@@ -2,6 +2,7 @@ package com.extractor.unraveldocs.utils.imageupload.cloudinary;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CloudinaryService {
+    @Getter
+    private static final String PROFILE_PICTURE_FOLDER = "profile_pictures";
+    @Getter
+    private static final String RESOURCE_TYPE_IMAGE = "image";
     private final Cloudinary cloudinary;
 
     public String uploadFile(
