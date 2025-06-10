@@ -6,7 +6,7 @@ import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateServi
 import com.extractor.unraveldocs.user.interfaces.userimpl.DeleteUserService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
+import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,7 +23,7 @@ import java.util.List;
 public class DeleteUserImpl implements DeleteUserService {
     private final UserRepository userRepository;
     private final UserVerificationRepository userVerificationRepository;
-    private final AwsS3Service awsS3Service;
+    private final CloudinaryService cloudinaryService;
     private final UserEmailTemplateService userEmailTemplateService;
 
     @Override
@@ -84,9 +84,8 @@ public class DeleteUserImpl implements DeleteUserService {
         List<User> usersToDelete = userRepository.findAllByDeletedAtBefore(threshold);
 
         for (User user : usersToDelete) {
-            // Delete user's profile picture from S3
             if (user.getProfilePicture() != null) {
-                awsS3Service.deleteFile(user.getProfilePicture());
+                cloudinaryService.deleteFile(user.getProfilePicture());
             }
 
             // Optionally, delete user verification data if applicable
@@ -110,7 +109,7 @@ public class DeleteUserImpl implements DeleteUserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getProfilePicture() != null) {
-            awsS3Service.deleteFile(user.getProfilePicture());
+            cloudinaryService.deleteFile(user.getProfilePicture());
         }
 
         if (user.getUserVerification() != null) {

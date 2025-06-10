@@ -35,13 +35,9 @@ public class LoginUserImpl implements LoginUserService {
 
     public UserResponse<LoginData> loginUser(LoginRequestDto request) {
         Optional<User> userOpt = userRepository.findByEmail(request.email());
-        log.info("User from repository: {}", userOpt.orElse(null));
 
         //userOpt.ifPresent(loginAttemptsService::checkIfUserBlocked);
-        userOpt.ifPresent(user -> {
-            log.info("Checking if user is blocked: {}", user);
-            loginAttemptsService.checkIfUserBlocked(user);
-        });
+        userOpt.ifPresent(loginAttemptsService::checkIfUserBlocked);
 
         Authentication authentication;
         try {
