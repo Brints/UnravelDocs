@@ -42,19 +42,36 @@ public class LoginAttemptsImpl implements LoginAttemptsService {
     private static String getDisplayMessage(Duration remainingDuration) {
         long totalRemainingSeconds = remainingDuration.getSeconds();
 
-        long daysToDisplay = (long) Math.ceil((double) totalRemainingSeconds / (24.0 * 60.0 * 60.0));
-
-        if (daysToDisplay < 1 && totalRemainingSeconds > 0) {
-            daysToDisplay = 1;
-        } else if (daysToDisplay < 1) {
-            daysToDisplay = 1;
+        if (totalRemainingSeconds <= 0) {
+            return """
+                    Your account is temporarily locked for 1 minute due to multiple failed login attempts.
+                    """;
         }
 
-        String dayWord = daysToDisplay == 1 ? "day" : "days";
+        long days = remainingDuration.toDays();
+        if (days >= 1) {
+            String dayWord = days == 1 ? "day" : "days";
+            return """
+                    Your account is temporarily locked for %d %s due to multiple failed login attempts.
+                    """.formatted(days, dayWord);
+        }
+
+        long hours = remainingDuration.toHours();
+        if (hours >= 1) {
+            String hourWord = hours == 1 ? "hour" : "hours";
+            return """
+                    Your account is temporarily for locked %d %s due to multiple failed login attempts.
+                    """.formatted(hours, hourWord);
+        }
+
+        long minutes = remainingDuration.toMinutes();
+        if (minutes < 1) {
+            minutes = 1;
+        }
+        String minuteWord = minutes == 1 ? "minute" : "minutes";
         return """
-                Your account is temporarily locked due to multiple failed login attempts.
-                Please try again after %d %s.
-                """.formatted(daysToDisplay, dayWord);
+                Your account is temporarily locked for %d %s due to multiple failed login attempts.
+                """.formatted(minutes, minuteWord);
     }
 
     @Override
