@@ -43,25 +43,19 @@ public class LoginAttemptsImpl implements LoginAttemptsService {
         long totalRemainingSeconds = remainingDuration.getSeconds();
 
         if (totalRemainingSeconds <= 0) {
-            return """
-                    Your account is temporarily locked for 1 minute due to multiple failed login attempts.
-                    """;
+            return "Your account is temporarily locked. Try again in 1 minute.";
         }
 
         long days = remainingDuration.toDays();
         if (days >= 1) {
             String dayWord = days == 1 ? "day" : "days";
-            return """
-                    Your account is temporarily locked for %d %s due to multiple failed login attempts.
-                    """.formatted(days, dayWord);
+            return "Your account is temporarily locked. Try again in %d %s.".formatted(days, dayWord);
         }
 
         long hours = remainingDuration.toHours();
         if (hours >= 1) {
             String hourWord = hours == 1 ? "hour" : "hours";
-            return """
-                    Your account is temporarily for locked %d %s due to multiple failed login attempts.
-                    """.formatted(hours, hourWord);
+            return "Your account is temporarily locked. Try again in %d %s.".formatted(hours, hourWord);
         }
 
         long minutes = remainingDuration.toMinutes();
@@ -69,9 +63,7 @@ public class LoginAttemptsImpl implements LoginAttemptsService {
             minutes = 1;
         }
         String minuteWord = minutes == 1 ? "minute" : "minutes";
-        return """
-                Your account is temporarily locked for %d %s due to multiple failed login attempts.
-                """.formatted(minutes, minuteWord);
+        return "Your account is temporarily locked. Try again in %d %s.".formatted(minutes, minuteWord);
     }
 
     @Override
@@ -83,21 +75,24 @@ public class LoginAttemptsImpl implements LoginAttemptsService {
                     return newAttempts;
                 });
 
+        // Check if block period has expired and reset if needed
+        if (attempts.isBlocked() &&
+                attempts.getBlockedUntil() != null &&
+                attempts.getBlockedUntil().isBefore(LocalDateTime.now())) {
+            attempts.setLoginAttempts(0);
+            attempts.setBlocked(false);
+            attempts.setBlockedUntil(null);
+        }
+
+        // Now increment the attempt count
         attempts.setLoginAttempts(attempts.getLoginAttempts() + 1);
 
         if (attempts.getLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
             attempts.setBlocked(true);
             attempts.setBlockedUntil(LocalDateTime.now().plusDays(LOCKOUT_DURATION_DAYS));
             loginAttemptsRepository.save(attempts);
-            throw new ForbiddenException("Your account has been locked for " + LOCKOUT_DURATION_DAYS + " days due to " + MAX_LOGIN_ATTEMPTS + " failed login attempts.");
+            throw new ForbiddenException("Your account has been locked. " + "Try again in " + LOCKOUT_DURATION_DAYS + " days.");
         } else {
-            if (
-                    attempts.isBlocked() &&
-                    attempts.getBlockedUntil() != null &&
-                    attempts.getBlockedUntil().isBefore(LocalDateTime.now())) {
-                attempts.setBlocked(false);
-                attempts.setBlockedUntil(null);
-            }
             loginAttemptsRepository.save(attempts);
             int attemptsRemaining = MAX_LOGIN_ATTEMPTS - attempts.getLoginAttempts();
             String attemptWord = attemptsRemaining == 1 ? "attempt" : "attempts";

@@ -73,7 +73,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily locked for 2 days due to multiple failed login attempts.";
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 2 days";
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -88,7 +88,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily for locked 3 hours due to multiple failed login attempts.";
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 3 hours";;
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -103,7 +103,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily locked for 30 minutes due to multiple failed login attempts.";
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 30 minutes";
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -118,7 +118,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily locked for 1 minute due to multiple failed login attempts.";
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 1 minute";
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -136,7 +136,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily locked for 1 minute due to multiple failed login attempts.";
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 1 minute.";
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -193,7 +193,7 @@ class LoginAttemptsImplTest {
         assertEquals(4, savedAttempts.getLoginAttempts());
         assertTrue(savedAttempts.isBlocked());
         assertNotNull(savedAttempts.getBlockedUntil());
-        assertTrue(exception.getMessage().contains("Your account has been locked for 5 days due to 4 failed login attempts."));
+        assertTrue(exception.getMessage().contains("Your account has been locked. Try again in 5 days."));
     }
 
     @Test
