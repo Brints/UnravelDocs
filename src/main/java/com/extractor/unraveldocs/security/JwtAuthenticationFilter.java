@@ -18,7 +18,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,12 +25,12 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -47,17 +46,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            boolean isValid = jwtTokenProvider.validateToken(token);
-            if (!isValid) {
-                sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid token", "INVALID_TOKEN");
+            // Check if token is blacklisted first
+            String jti = jwtTokenProvider.getJtiFromToken(token);
+            if (jti != null && tokenBlacklistService.isTokenBlacklisted(jti)) {
+                sendErrorResponse(
+                        request,
+                        response,
+                        HttpStatus.UNAUTHORIZED,
+                        "Token has been revoked",
+                        "TOKEN_REVOKED");
                 return;
             }
+
+            jwtTokenProvider.validateToken(token);
 
             String email = jwtTokenProvider.getEmailFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             if (userDetails == null) {
-                sendErrorResponse(response, HttpStatus.FORBIDDEN, "User not found", "USER_NOT_FOUND");
+                sendErrorResponse(
+                        request,
+                        response,
+                        HttpStatus.FORBIDDEN,
+                        "User not found",
+                        "USER_NOT_FOUND");
                 return;
             }
 
@@ -72,13 +84,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Token has expired", "EXPIRED_TOKEN");
+            sendErrorResponse(
+                    request,
+                    response,
+                    HttpStatus.UNAUTHORIZED,
+                    "Token has expired",
+                    "EXPIRED_TOKEN");
         } catch (MalformedJwtException | UnsupportedJwtException ex) {
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid token", "INVALID_TOKEN");
+            sendErrorResponse(
+                    request,
+                    response,
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid token",
+                    "INVALID_TOKEN");
         } catch (SignatureException ex) {
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "Token signature invalid", "INVALID_SIGNATURE");
+            sendErrorResponse(
+                    request,
+                    response,
+                    HttpStatus.UNAUTHORIZED,
+                    "Token signature invalid",
+                    "INVALID_SIGNATURE");
         } catch (Exception ex) {
-            sendErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Authentication failed", "AUTH_ERROR");
+            logger.error("Authentication failed in JWT filter", ex);
+            sendErrorResponse(
+                    request,
+                    response,
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Authentication processing error",
+                    "AUTH_PROCESSING_ERROR");
         }
     }
 
@@ -90,21 +123,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void sendErrorResponse(HttpServletResponse response,
-                                   HttpStatus status,
-                                   String message,
-                                   String errorCode) throws IOException {
+    private void sendErrorResponse(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            HttpStatus status,
+            String message,
+            String errorCode) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", System.currentTimeMillis());
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
         if (errorCode != null) {
             body.put("errorCode", errorCode);
         }
-        body.put("path", ((HttpServletRequest) response).getRequestURI());
+        body.put("path", request.getRequestURI());
 
         objectMapper.writeValue(response.getWriter(), body);
     }

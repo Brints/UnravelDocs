@@ -1,4 +1,0 @@
-@email = {{EMAIL}}
-@token = {{VERIFY_EMAIL_TOKEN}}
-
-GET http://localhost:8080/api/v1/auth/verify-email?email={{email}}&token={{token}}

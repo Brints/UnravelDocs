@@ -6,7 +6,9 @@ import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
 import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.interfaces.ChangeUserRoleService;
 import com.extractor.unraveldocs.admin.interfaces.GetAllUsersService;
+import com.extractor.unraveldocs.admin.interfaces.GetUserProfileByAdminService;
 import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.user.dto.UserData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class AdminService {
     private final ChangeUserRoleService changeRoleService;
     private final GetAllUsersService getAllUsersService;
+    private final GetUserProfileByAdminService getProfileByAdmin;
 
     public UserResponse<AdminData> changeUserRole(ChangeRoleDto request, Authentication authentication) {
         return changeRoleService.changeUserRole(request, authentication);
@@ -23,5 +26,9 @@ public class AdminService {
 
     public UserResponse<UserListData> getAllUsers(UserFilterDto request) {
         return getAllUsersService.getAllUsers(request);
+    }
+
+    public UserResponse<UserData> getUserProfileByAdmin(String userId) {
+        return getProfileByAdmin.getUserProfileByAdmin(userId);
     }
 }

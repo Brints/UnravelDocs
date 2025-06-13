@@ -22,7 +22,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -56,22 +55,6 @@ public class UserController {
         String userId = user.getId();
 
         return ResponseEntity.ok(userService.getUserProfileByOwner(userId));
-    }
-
-    /**
-     * Get the profile of a user by their ID.
-     *
-     * @param userId The ID of the user whose profile is to be retrieved.
-     * @return ResponseEntity containing the user profile information.
-     */
-    @Operation(summary = "Get user profile by ID")
-    @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('ROLE_admin')")
-    public ResponseEntity<?> getUserProfileById(
-            @Parameter(description = "ID of the user to retrieve")
-            @PathVariable String userId
-    ) {
-        return ResponseEntity.ok(userService.getUserProfileByAdmin(userId));
     }
 
     /**
@@ -125,10 +108,7 @@ public class UserController {
         if (authenticatedUser == null) {
             throw new ForbiddenException("Please login to change your password");
         }
-        return ResponseEntity.ok(userService.changePassword(
-                new PasswordResetParams(authenticatedUser.getUsername(),
-                        null)
-                , changePasswordDto));
+        return ResponseEntity.ok(userService.changePassword(changePasswordDto));
     }
 
     /**

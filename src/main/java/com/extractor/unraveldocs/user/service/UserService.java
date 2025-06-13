@@ -26,10 +26,6 @@ public class UserService {
         return getUserProfileService.getUserProfileByOwner(userId);
     }
 
-    public UserResponse<UserData> getUserProfileByAdmin(String userId) {
-        return getUserProfileService.getUserProfileByAdmin(userId);
-    }
-
     public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         return passwordResetService.forgotPassword(forgotPasswordDto);
     }
@@ -38,8 +34,8 @@ public class UserService {
         return passwordResetService.resetPassword(params, request);
     }
 
-    public UserResponse<Void> changePassword(IPasswordReset params, ChangePasswordDto request) {
-        return changePasswordService.changePassword(params, request);
+    public UserResponse<Void> changePassword(ChangePasswordDto request) {
+        return changePasswordService.changePassword(request);
     }
 
     public UserResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {

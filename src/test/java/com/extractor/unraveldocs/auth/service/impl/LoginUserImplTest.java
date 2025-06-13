@@ -109,7 +109,7 @@ public class LoginUserImplTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
         when(userRepository.findByEmail(principal.getUsername())).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.generateToken(user)).thenReturn("jwtToken");
+        when(jwtTokenProvider.generateAccessToken(user)).thenReturn("jwtToken");
         when(responseBuilder.buildUserResponse(
                 any(LoginData.class),
                 eq(HttpStatus.OK),
@@ -131,7 +131,7 @@ public class LoginUserImplTest {
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository, times(2)).findByEmail(eq("test@example.com")); // Adjusted for clarity
         verify(loginAttemptsService).resetLoginAttempts(user);
-        verify(jwtTokenProvider).generateToken(user);
+        verify(jwtTokenProvider).generateAccessToken(user);
         verify(userRepository).save(user);
         verify(responseBuilder).buildUserResponse(any(LoginData.class), eq(HttpStatus.OK), eq("User logged in successfully"));
     }
@@ -151,7 +151,7 @@ public class LoginUserImplTest {
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(loginAttemptsService).recordFailedLoginAttempt(user);
         verify(userRepository, never()).save(any(User.class));
-        verify(jwtTokenProvider, never()).generateToken(any(User.class));
+        verify(jwtTokenProvider, never()).generateAccessToken(any(User.class));
         verify(responseBuilder, never()).buildUserResponse(any(), any(), anyString());
     }
 

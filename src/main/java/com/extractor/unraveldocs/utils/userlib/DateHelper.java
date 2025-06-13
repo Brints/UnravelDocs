@@ -1,16 +1,15 @@
 package com.extractor.unraveldocs.utils.userlib;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Component
 public class DateHelper {
-    private static final Logger log = LoggerFactory.getLogger(DateHelper.class);
 
     public LocalDateTime setExpiryDate(LocalDateTime now, String format, int setTime) {
         return switch (format.toLowerCase()) {
@@ -27,8 +26,6 @@ public class DateHelper {
         }
 
         Duration duration = Duration.between(now, expiryDate);
-        log.info("Duration in get time in hours {} ", duration);
-        log.info("Get time in hours {} ", duration.toHours());
 
         return switch (format.toLowerCase()) {
             case "minutes", "minute" -> duration.toMinutes() < 2 ? "1 minute" : duration.toMinutes() + " minutes";
