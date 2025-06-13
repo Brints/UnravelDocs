@@ -7,6 +7,7 @@ import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.service.AdminService;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.user.dto.UserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -64,15 +65,23 @@ public class AdminController {
             throw new ForbiddenException("You must be logged in to view users");
         }
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_admin") || auth.getAuthority().equals(
-                        "ROLE_super_admin"));
-        if (!isAdmin) {
-            throw new ForbiddenException("Only admins can view users");
-        }
-
         UserResponse<UserListData> response = adminService.getAllUsers(request);
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get the profile of a user by admin.
+     *
+     * @param userId The ID of the user whose profile is to be fetched.
+     * @return ResponseEntity containing the user's profile data.
+     */
+    @Operation(
+            summary = "Get user profile by admin",
+            description = "Fetches the profile of a user by admin.")
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponse<UserData>> getUserProfileByAdmin(@PathVariable String userId) {
+        UserResponse<UserData> response = adminService.getUserProfileByAdmin(userId);
         return ResponseEntity.ok(response);
     }
 }

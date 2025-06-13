@@ -16,6 +16,7 @@ public record LoginData(
         boolean isActive,
         boolean isVerified,
         String accessToken,
+        String refreshToken,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

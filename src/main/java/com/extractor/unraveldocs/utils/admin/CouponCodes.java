@@ -1,5 +1,8 @@
 package com.extractor.unraveldocs.utils.admin;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class CouponCodes {
     public String generateCouponCode() {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

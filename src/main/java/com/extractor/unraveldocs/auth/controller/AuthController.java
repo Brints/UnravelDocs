@@ -1,11 +1,9 @@
 package com.extractor.unraveldocs.auth.controller;
 
 import com.extractor.unraveldocs.auth.dto.LoginData;
+import com.extractor.unraveldocs.auth.dto.RefreshLoginData;
 import com.extractor.unraveldocs.auth.dto.SignupData;
-import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
-import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
-import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
-import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
+import com.extractor.unraveldocs.auth.dto.request.*;
 import com.extractor.unraveldocs.auth.service.AuthService;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
@@ -14,7 +12,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -147,5 +147,56 @@ public class AuthController {
 
         UserResponse<Void> response = authService.resendEmailVerification(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Refresh the user's authentication token.
+     *
+     * @param request The refresh token request containing the current token.
+     * @return ResponseEntity containing the refreshed login data.
+     */
+    @PostMapping("/refresh-token")
+    @Operation(
+            summary = "Refresh authentication token",
+            description = "Obtain a new access token using a valid refresh token.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Access token refreshed successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Invalid or expired refresh token"
+                    )
+            }
+    )
+    public ResponseEntity<UserResponse<RefreshLoginData>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request));
+    }
+
+    /**
+     * Logout the user by invalidating the current session.
+     *
+     * @param request The HTTP request containing the user's session information.
+     * @return ResponseEntity indicating the result of the operation.
+     */
+    @PostMapping("/logout")
+    @Operation(
+            summary = "Logout user",
+            description = "Invalidates the current user's access token.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Logged out successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    )
+            }
+    )
+    public ResponseEntity<UserResponse<Void>> logout(HttpServletRequest request) {
+        UserResponse<Void> response = authService.logout(request);
+        return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
 }

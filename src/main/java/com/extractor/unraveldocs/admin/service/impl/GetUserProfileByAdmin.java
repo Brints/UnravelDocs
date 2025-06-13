@@ -1,12 +1,12 @@
-package com.extractor.unraveldocs.user.service.impl;
+package com.extractor.unraveldocs.admin.service.impl;
 
+import com.extractor.unraveldocs.admin.interfaces.GetUserProfileByAdminService;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.dto.UserData;
-import com.extractor.unraveldocs.user.interfaces.userimpl.GetUserProfileService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -16,13 +16,13 @@ import static com.extractor.unraveldocs.global.response.ResponseData.getResponse
 
 @Service
 @RequiredArgsConstructor
-public class GetUserProfileImpl implements GetUserProfileService {
-    private final UserRepository userRepository;
+public class GetUserProfileByAdmin implements GetUserProfileByAdminService {
     private final ResponseBuilderService responseBuilder;
+    private final UserRepository userRepository;
 
     @Override
-    @Cacheable(value = "getProfileByUser", key = "#userId")
-    public UserResponse<UserData> getUserProfileByOwner(String userId) {
+    @Cacheable(value = "getProfileByAdmin", key = "#userId")
+    public UserResponse<UserData> getUserProfileByAdmin(String userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));

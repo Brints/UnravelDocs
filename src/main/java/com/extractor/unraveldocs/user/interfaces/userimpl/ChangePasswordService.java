@@ -5,5 +5,5 @@ import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 
 public interface ChangePasswordService {
-    UserResponse<Void> changePassword(IPasswordReset params, ChangePasswordDto request);
+    UserResponse<Void> changePassword(ChangePasswordDto request);
 }

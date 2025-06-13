@@ -39,7 +39,7 @@ class GetUserProfileImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         userId = "123";
-        userEmail = "test@example.com"; // Keep for user object creation, but use userId for service call
+        userEmail = "test@example.com";
         user = createUser();
     }
 
@@ -58,30 +58,6 @@ class GetUserProfileImplTest {
         return u;
     }
 
-    @Test
-    void getUserProfileById_UserExists_ReturnsUserResponse() {
-        UserResponse<UserData> userResponse = new UserResponse<>();
-        userResponse.setStatusCode(HttpStatus.OK.value());
-        userResponse.setStatus("success");
-        userResponse.setMessage("User profile retrieved successfully");
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), eq("User profile retrieved successfully")))
-                .thenReturn(userResponse);
-
-        UserResponse<UserData> result = userProfile.getUserProfileByAdmin(userId);
-
-        assertEquals(userResponse, result);
-        verify(userRepository).findById(userId);
-    }
-
-    @Test
-    void getUserProfileById_UserNotFound_ThrowsNotFoundException() {
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByAdmin(userId));
-        verify(userRepository).findById(userId);
-    }
 
     @Test
     void getAuthenticatedUserProfile_UserExists_ReturnsUserResponse() {
@@ -105,6 +81,6 @@ class GetUserProfileImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> userProfile.getUserProfileByOwner(userId));
-        verify(userRepository).findById(userId); // Verify findById was called
+        verify(userRepository).findById(userId);
     }
 }

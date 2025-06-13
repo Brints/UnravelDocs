@@ -4,29 +4,41 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
+import com.extractor.unraveldocs.security.JwtTokenProvider;
+import com.extractor.unraveldocs.security.TokenBlacklistService;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
 import com.extractor.unraveldocs.global.response.UserResponse;
-import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ChangePasswordService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChangePasswordImpl implements ChangePasswordService {
-    private final UserRepository userRepository;
+
     private final PasswordEncoder passwordEncoder;
-    private final UserEmailTemplateService userEmailTemplateService;
     private final ResponseBuilderService responseBuilder;
+    private final TokenBlacklistService tokenBlacklist;
+    private final JwtTokenProvider tokenProvider;
+    private final UserEmailTemplateService userEmailTemplateService;
+    private final UserRepository userRepository;
 
     @Override
-    public UserResponse<Void> changePassword(IPasswordReset params, ChangePasswordDto request) {
-        String email = params.getEmail();
+    @Transactional
+    public UserResponse<Void> changePassword(ChangePasswordDto request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 
@@ -50,7 +62,18 @@ public class ChangePasswordImpl implements ChangePasswordService {
         user.setPassword(encodedPassword);
         userRepository.save(user);
 
+        // Invalidate all tokens for the user
+        String jti;
+        if (authentication.getCredentials() instanceof String token) {
+            jti = tokenProvider.getJtiFromToken(token);
+            if (jti != null) {
+                tokenBlacklist.blacklistToken(jti, tokenProvider.getAccessExpirationInMs());
+            }
+        }
+
         userEmailTemplateService.sendSuccessfulPasswordChange(email, user.getFirstName(), user.getLastName());
+
+        log.info("Password changed successfully for user: {}", email);
 
         return responseBuilder
                 .buildUserResponse(null, HttpStatus.OK, "Password changed successfully.");

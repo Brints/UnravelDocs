@@ -1,10 +1,8 @@
 package com.extractor.unraveldocs.config;
 
 import com.extractor.unraveldocs.auth.service.CustomUserDetailsService;
+import com.extractor.unraveldocs.security.*;
 import com.extractor.unraveldocs.utils.CustomPermissionEvaluator;
-import com.extractor.unraveldocs.security.JwtAuthenticationEntryPoint;
-import com.extractor.unraveldocs.security.JwtAuthenticationFilter;
-import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +39,10 @@ public class SecurityConfig {
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
             CustomUserDetailsService userDetailsService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            TokenBlacklistService tokenBlacklistService
     ) {
-        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, objectMapper);
+        return new JwtAuthenticationFilter(jwtTokenProvider, objectMapper, tokenBlacklistService, userDetailsService);
     }
 
     @Bean
@@ -78,7 +77,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors
                         .configurationSource(corsConfigurationSource()))
@@ -96,22 +96,26 @@ public class SecurityConfig {
                         "/api/v1/auth/login",
                         "/api/v1/auth/signup",
                         "/api/v1/auth/verify-email",
+                        "/api/v1/auth/refresh-token",
                         "/api/v1/user/forgot-password",
                         "/api/v1/user/reset-password/**",
                         "/api/v1/auth/resend-verification-email",
                         "/api/v1/auth/generate-password").permitAll()
                         .requestMatchers(
+                                "/api/v1/admin/**"
+                                ).hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                        .requestMatchers(
+                                "/api/v1/auth/logout",
                                 "/me/**",
                                 "/api/v1/user/**",
                                 "/api/v1/user/change-password",
                                 "/api/v1/user/update-profile",
-                                "/api/v1/user/delete-account",
-                                "/api/v1/admin/change-role",
-                                "/api/v1/admin/users"
+                                "/api/v1/user/delete-account"
                         ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(authenticationEntryPoint))
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
