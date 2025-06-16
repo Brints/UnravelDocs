@@ -2,6 +2,7 @@ package com.extractor.unraveldocs.user.model;
 
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.model.UserVerification;
+import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 @Data
 @Entity
@@ -63,6 +65,9 @@ public class User implements UserDetails {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserVerification userVerification;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<DocumentCollection> documents;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")

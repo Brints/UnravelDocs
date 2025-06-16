@@ -46,7 +46,7 @@ public class CloudinaryService {
     }
 
     // generate random public ID for file upload
-    private String generateRandomPublicId(String originalFileName) {
+    public String generateRandomPublicId(String originalFileName) {
         return UUID.randomUUID() + "-" + originalFileName.replaceAll("[^a-zA-Z0-9]", "_");
     }
 }

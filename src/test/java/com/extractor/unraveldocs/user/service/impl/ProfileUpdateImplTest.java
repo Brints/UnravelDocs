@@ -17,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -105,6 +106,9 @@ class ProfileUpdateImplTest {
                 eq("profile.jpg"),
                 anyString()
         )).thenReturn("new-url");
+
+        when(userLibrary.capitalizeFirstLetterOfName("John")).thenReturn("John");
+        when(userLibrary.capitalizeFirstLetterOfName("Doe")).thenReturn("Doe");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
         when(responseBuilder.buildUserResponse(any(UserData.class), eq(HttpStatus.OK), anyString()))
                 .thenReturn(new UserResponse<>());

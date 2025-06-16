@@ -110,7 +110,8 @@ public class SecurityConfig {
                                 "/api/v1/user/**",
                                 "/api/v1/user/change-password",
                                 "/api/v1/user/update-profile",
-                                "/api/v1/user/delete-account"
+                                "/api/v1/user/delete-account",
+                                "/api/v1/documents/**"
                         ).authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
