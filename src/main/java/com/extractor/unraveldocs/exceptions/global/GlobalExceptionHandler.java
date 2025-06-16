@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -104,6 +105,20 @@ public class GlobalExceptionHandler {
         errorResponse.setError(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         errorResponse.setMessage(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        // Create a new ErrorResponse instance for thread safety if errorResponse is a shared field
+        ErrorResponse specificErrorResponse = new ErrorResponse();
+        specificErrorResponse.setStatusCode(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        specificErrorResponse.setError(HttpStatus.PAYLOAD_TOO_LARGE.getReasonPhrase());
+        specificErrorResponse.setMessage(
+                ex.getMessage() != null ? ex.getMessage() + " (Max size: 10MB)" :
+                "Maximum upload size of " + ex.getMaxUploadSize() + " bytes exceeded."
+                );
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(specificErrorResponse);
     }
 
     @ExceptionHandler(Exception.class)

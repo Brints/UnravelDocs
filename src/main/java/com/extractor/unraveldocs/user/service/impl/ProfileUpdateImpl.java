@@ -1,6 +1,5 @@
 package com.extractor.unraveldocs.user.service.impl;
 
-import com.cloudinary.Cloudinary;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
@@ -9,7 +8,6 @@ import com.extractor.unraveldocs.user.interfaces.userimpl.ProfileUpdateService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;

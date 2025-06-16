@@ -29,6 +29,10 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>1.0.0-M7</spring-ai.version>
+        <spring.datasource.url>jdbc:postgresql://localhost:5432/unraveldocs</spring.datasource.url>
+        <spring.datasource.username>postgres</spring.datasource.username>
+        <spring.datasource.password>postgres</spring.datasource.password>
+        <!-- Add other properties from application.properties if needed by other plugins -->
     </properties>
     <dependencies>
         <dependency>
@@ -304,6 +308,22 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>10.20.1</version> <!-- Or your current Flyway version -->
+                <configuration>
+                    <url>${spring.datasource.url}</url>
+                    <user>${spring.datasource.username}</user>
+                    <password>${spring.datasource.password}</password>
+                    <!-- Locations are usually picked up automatically if 'db/migration' is standard,
+                         but you can specify them if needed: -->
+                    <!-- <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations> -->
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
