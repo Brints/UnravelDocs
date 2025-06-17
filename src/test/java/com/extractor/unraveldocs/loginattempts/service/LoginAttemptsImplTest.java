@@ -88,7 +88,7 @@ class LoginAttemptsImplTest {
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> loginAttemptsService.checkIfUserBlocked(user));
-        String expectedMessagePart = "Your account is temporarily locked. Try again in 3 hours";;
+        String expectedMessagePart = "Your account is temporarily locked. Try again in 3 hours";
         assertTrue(exception.getMessage().contains(expectedMessagePart),
                 "Exception message was: " + exception.getMessage() + ", expected to contain: " + expectedMessagePart);
     }
@@ -128,10 +128,8 @@ class LoginAttemptsImplTest {
         LoginAttempts attempts = new LoginAttempts();
         attempts.setUser(user);
         attempts.setBlocked(true);
-        // Set blockedUntil to be slightly in the future (e.g., 50 milliseconds)
-        // This should ensure isAfter(now) is true in checkIfUserBlocked,
-        // and duration.getSeconds() will be 0, hitting the desired condition.
-        attempts.setBlockedUntil(LocalDateTime.now().plus(50, ChronoUnit.MILLIS));
+        LocalDateTime testStartTime = LocalDateTime.now();
+        attempts.setBlockedUntil(testStartTime.plus(500, ChronoUnit.MILLIS));
         when(loginAttemptsRepository.findByUser(user)).thenReturn(Optional.of(attempts));
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,

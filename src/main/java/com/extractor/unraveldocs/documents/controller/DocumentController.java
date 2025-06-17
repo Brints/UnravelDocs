@@ -58,7 +58,6 @@ public class DocumentController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ForbiddenException("User not found"));
 
-        // Call the service once with all files
         DocumentCollectionResponse response = documentService.uploadDocuments(files, user);
 
         return ResponseEntity.ok(response);
@@ -68,7 +67,7 @@ public class DocumentController {
             summary = "Delete a document collection",
             description = "Allows users to delete their uploaded document collections.")
     @DeleteMapping("/{collectionId}")
-    public ResponseEntity<DocumentCollectionResponse> deleteDocument(
+    public ResponseEntity<Void> deleteDocument(
             @PathVariable String collectionId,
             Authentication authenticatedUser
     ) {
@@ -81,8 +80,8 @@ public class DocumentController {
                 .orElseThrow(() -> new ForbiddenException("User not found"))
                 .getId();
 
-        DocumentCollectionResponse response = documentService.deleteDocument(collectionId, userId);
-        return ResponseEntity.ok(response);
+        documentService.deleteDocument(collectionId, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(
@@ -95,7 +94,7 @@ public class DocumentController {
             }
     )
     @DeleteMapping("/{collectionId}/files/{documentId}")
-    public ResponseEntity<DocumentCollectionResponse> deleteFileFromCollection(
+    public ResponseEntity<Void> deleteFileFromCollection(
             @Parameter(description = "ID of the document collection") @PathVariable String collectionId,
             @Parameter(description = "Storage ID of the file to be deleted") @PathVariable String documentId,
             Authentication authenticatedUser
@@ -108,7 +107,7 @@ public class DocumentController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ForbiddenException("User not found"));
 
-        DocumentCollectionResponse response = documentService.deleteFileFromCollection(collectionId, documentId, user.getId());
-        return ResponseEntity.ok(response);
+        documentService.deleteFileFromCollection(collectionId, documentId, user.getId());
+        return ResponseEntity.noContent().build();
     }
 }
