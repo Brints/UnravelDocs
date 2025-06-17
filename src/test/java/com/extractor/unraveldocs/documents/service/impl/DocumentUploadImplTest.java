@@ -7,8 +7,7 @@ import com.extractor.unraveldocs.documents.enums.DocumentStatus;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
-import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
-import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
+import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +20,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
-import com.extractor.unraveldocs.auth.enums.Role; // Import Role
+import com.extractor.unraveldocs.auth.enums.Role;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,6 +44,9 @@ class DocumentUploadImplTest {
     @Mock
     private DocumentConfigProperties documentConfigProperties;
 
+    @Mock
+    private SanitizeLogging s;
+
     @InjectMocks
     private DocumentUploadImpl documentUploadService;
 
@@ -54,7 +55,6 @@ class DocumentUploadImplTest {
     private MockMultipartFile validFile2;
     private MockMultipartFile invalidFileTypeFile;
     private MockMultipartFile emptyFile;
-
 
     @BeforeEach
     void setUp() {
@@ -72,10 +72,11 @@ class DocumentUploadImplTest {
         invalidFileTypeFile = new MockMultipartFile("files", "file3.txt", "text/plain", "file3 content".getBytes());
         emptyFile = new MockMultipartFile("files", "empty.png", "image/png", new byte[0]);
 
+        when(s.sanitizeLogging(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
-    void uploadDocuments_success_allFilesUploaded() throws Exception {
+    void uploadDocuments_success_allFilesUploaded() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
         when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
@@ -132,7 +133,7 @@ class DocumentUploadImplTest {
     }
 
     @Test
-    void uploadDocuments_partialSuccess_oneFileFailsValidation() throws Exception {
+    void uploadDocuments_partialSuccess_oneFileFailsValidation() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
         when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
@@ -186,7 +187,7 @@ class DocumentUploadImplTest {
     }
 
     @Test
-    void uploadDocuments_partialSuccess_oneFileFailsStorageUpload() throws Exception {
+    void uploadDocuments_partialSuccess_oneFileFailsStorageUpload() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
         when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
@@ -269,212 +270,5 @@ class DocumentUploadImplTest {
         verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
     }
 
-    @Test
-    void deleteDocument_success() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String file1StorageId = "storageId1";
-        String file1DocumentId = UUID.randomUUID().toString();
 
-        FileEntry fileEntry1 = FileEntry.builder().documentId(file1DocumentId).storageId(file1StorageId).uploadStatus("SUCCESS").build();
-        DocumentCollection collection = DocumentCollection.builder()
-                .id(collectionId)
-                .user(testUser)
-                .files(new ArrayList<>(List.of(fileEntry1)))
-                .build();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(file1StorageId);
-        doNothing().when(documentCollectionRepository).delete(collection);
-
-        // Act
-        DocumentCollectionResponse response = documentUploadService.deleteDocument(collectionId, testUser.getId());
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatusCode());
-        assertEquals("success", response.getStatus());
-        assertEquals("Document collection deleted successfully.", response.getMessage());
-        assertNull(response.getData());
-
-        verify(cloudinaryService).deleteFile(file1StorageId);
-        verify(documentCollectionRepository).delete(collection);
-    }
-
-    @Test
-    void deleteDocument_collectionNotFound() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
-            documentUploadService.deleteDocument(collectionId, testUser.getId());
-        });
-        assertEquals("Document collection not found with ID: " + collectionId, exception.getMessage());
-        verify(cloudinaryService, never()).deleteFile(anyString());
-        verify(documentCollectionRepository, never()).delete(any(DocumentCollection.class));
-    }
-
-    @Test
-    void deleteDocument_forbidden() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        User anotherUser = new User();
-        anotherUser.setId(UUID.randomUUID().toString());
-        anotherUser.setEmail("another@example.com");
-        anotherUser.setRole(Role.USER);
-        anotherUser.setVerified(true);
-        anotherUser.setActive(true);
-
-        DocumentCollection collection = DocumentCollection.builder().id(collectionId).user(anotherUser).files(new ArrayList<>()).build();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-
-        // Act & Assert
-        ForbiddenException exception = assertThrows(ForbiddenException.class, () -> {
-            documentUploadService.deleteDocument(collectionId, testUser.getId());
-        });
-        assertEquals("You are not authorized to delete this document collection.", exception.getMessage());
-        verify(cloudinaryService, never()).deleteFile(anyString());
-        verify(documentCollectionRepository, never()).delete(any(DocumentCollection.class));
-    }
-
-    @Test
-    void deleteFileFromCollection_success() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String documentIdToRemove = UUID.randomUUID().toString();
-        String storageIdToRemove = "storageIdToRemove";
-
-        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).uploadStatus("SUCCESS").build();
-        FileEntry remainingFile = FileEntry.builder().documentId(UUID.randomUUID().toString()).storageId("otherStorageId").uploadStatus("SUCCESS").build();
-        List<FileEntry> files = new ArrayList<>(List.of(fileToRemove, remainingFile));
-
-        DocumentCollection collection = DocumentCollection.builder()
-                .id(collectionId)
-                .user(testUser)
-                .files(files) // Use the mutable list
-                .collectionStatus(DocumentStatus.COMPLETED)
-                .build();
-
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(storageIdToRemove);
-        when(documentCollectionRepository.save(any(DocumentCollection.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-
-        // Act
-        DocumentCollectionResponse response = documentUploadService.deleteFileFromCollection(collectionId, documentIdToRemove, testUser.getId());
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatusCode());
-        assertEquals("success", response.getStatus());
-        assertEquals("File with document ID " + documentIdToRemove + " deleted successfully from collection " + collectionId, response.getMessage());
-        assertNull(response.getData());
-
-        verify(cloudinaryService).deleteFile(storageIdToRemove);
-
-        ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
-        verify(documentCollectionRepository).save(collectionCaptor.capture());
-        DocumentCollection savedCollection = collectionCaptor.getValue();
-
-        assertEquals(1, savedCollection.getFiles().size());
-        assertFalse(savedCollection.getFiles().contains(fileToRemove));
-        assertEquals(DocumentStatus.COMPLETED, savedCollection.getCollectionStatus());
-    }
-
-    @Test
-    void deleteFileFromCollection_lastFileDeletesCollection() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String documentIdToRemove = UUID.randomUUID().toString();
-        String storageIdToRemove = "storageIdToRemove";
-
-        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).uploadStatus("SUCCESS").build();
-        List<FileEntry> files = new ArrayList<>(List.of(fileToRemove)); // Mutable list
-
-        DocumentCollection collection = DocumentCollection.builder()
-                .id(collectionId)
-                .user(testUser)
-                .files(files) // Use the mutable list
-                .collectionStatus(DocumentStatus.COMPLETED)
-                .build();
-
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(storageIdToRemove);
-        doNothing().when(documentCollectionRepository).delete(any(DocumentCollection.class));
-
-
-        // Act
-        DocumentCollectionResponse response = documentUploadService.deleteFileFromCollection(collectionId, documentIdToRemove, testUser.getId());
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatusCode());
-        assertEquals("success", response.getStatus());
-        assertEquals("File with document ID " + documentIdToRemove + " deleted successfully from collection " + collectionId, response.getMessage());
-        assertNull(response.getData());
-
-        verify(cloudinaryService).deleteFile(storageIdToRemove);
-        verify(documentCollectionRepository).delete(collection);
-        verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
-        assertTrue(collection.getFiles().isEmpty());
-    }
-
-    @Test
-    void deleteFileFromCollection_fileNotFoundInCollection() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String nonExistentDocumentId = UUID.randomUUID().toString();
-        DocumentCollection collection = DocumentCollection.builder().id(collectionId).user(testUser).files(new ArrayList<>()).build();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-
-        // Act & Assert
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
-            documentUploadService.deleteFileFromCollection(collectionId, nonExistentDocumentId, testUser.getId());
-        });
-        assertEquals("File with document ID: " + nonExistentDocumentId + " not found in collection: " + collectionId, exception.getMessage());
-        verify(cloudinaryService, never()).deleteFile(anyString());
-    }
-
-    @Test
-    void deleteFileFromCollection_collectionNotFound() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String documentId = UUID.randomUUID().toString();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
-            documentUploadService.deleteFileFromCollection(collectionId, documentId, testUser.getId());
-        });
-        assertEquals("Document collection not found with ID: " + collectionId, exception.getMessage());
-    }
-
-    @Test
-    void deleteFileFromCollection_forbidden() {
-        // Arrange
-        String collectionId = UUID.randomUUID().toString();
-        String documentId = UUID.randomUUID().toString();
-        User anotherUser = new User();
-        anotherUser.setId(UUID.randomUUID().toString());
-        anotherUser.setEmail("another@example.com");
-        anotherUser.setRole(Role.USER);
-        anotherUser.setVerified(true);
-        anotherUser.setActive(true);
-
-        FileEntry existingFile = FileEntry.builder().documentId(documentId).storageId("someStorageId").build();
-        DocumentCollection collection = DocumentCollection.builder()
-                .id(collectionId)
-                .user(anotherUser)
-                .files(new ArrayList<>(List.of(existingFile)))
-                .build();
-        when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-
-        // Act & Assert
-        ForbiddenException exception = assertThrows(ForbiddenException.class, () -> {
-            documentUploadService.deleteFileFromCollection(collectionId, documentId, testUser.getId());
-        });
-        assertEquals("You are not authorized to modify this document collection.", exception.getMessage());
-        verify(cloudinaryService, never()).deleteFile(anyString());
-    }
 }

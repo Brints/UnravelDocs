@@ -9,9 +9,8 @@ import com.extractor.unraveldocs.documents.interfaces.DocumentUploadService;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
+import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
-import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
-import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import lombok.RequiredArgsConstructor;
@@ -25,15 +24,15 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocumentUploadImpl implements DocumentUploadService {
-    private final DocumentCollectionRepository documentCollectionRepository;
     private final CloudinaryService cloudinaryService;
+    private final DocumentCollectionRepository documentCollectionRepository;
     private final DocumentConfigProperties documentConfigProperties;
+    private final SanitizeLogging s;
 
     @Override
     @Transactional
@@ -82,7 +81,10 @@ public class DocumentUploadImpl implements DocumentUploadService {
                             .message("Uploaded successfully.");
                     successfulUploads++;
                 } catch (Exception storageEx) {
-                    log.error("Failed to upload validated file {} to storage: {}", originalFilename, storageEx.getMessage(), storageEx);
+                    log.error("Failed to upload validated file {} to storage: {}",
+                            s.sanitizeLogging(originalFilename),
+                            s.sanitizeLogging(storageEx.getMessage()),
+                            storageEx);
                     fileEntryBuilder.uploadStatus("FAILED_STORAGE_UPLOAD")
                             .errorMessage("Storage upload failed: " + storageEx.getMessage());
 
@@ -95,7 +97,9 @@ public class DocumentUploadImpl implements DocumentUploadService {
                     storageFailures++;
                 }
             } catch (BadRequestException | IllegalArgumentException validationEx) {
-                log.warn("Validation failed for file {}: {}", originalFilename, validationEx.getMessage());
+                log.warn("Validation failed for file {}: {}",
+                        s.sanitizeLogging(originalFilename),
+                        s.sanitizeLogging(validationEx.getMessage()));
                 String tempDocumentId = java.util.UUID.randomUUID().toString();
                 fileEntryDataBuilder.documentId(tempDocumentId)
                         .status("FAILED_VALIDATION")
@@ -106,7 +110,6 @@ public class DocumentUploadImpl implements DocumentUploadService {
         }
 
         String savedCollectionId = null;
-        // DocumentStatus persistedCollectionEntityStatus = null; // Status of the actual DB entity
 
         if (!processedFileEntries.isEmpty()) {
             DocumentCollection documentCollection = DocumentCollection.builder()
@@ -130,23 +133,24 @@ public class DocumentUploadImpl implements DocumentUploadService {
 
             DocumentCollection savedCollection = documentCollectionRepository.save(documentCollection);
             savedCollectionId = savedCollection.getId();
-            // persistedCollectionEntityStatus = savedCollection.getCollectionStatus();
             log.info("Document collection {} created with {} processed files for user {}. Status: {}",
-                    savedCollectionId, processedFileEntries.size(), user.getId(), savedCollection.getCollectionStatus());
+                    s.sanitizeLogging(savedCollectionId),
+                    processedFileEntries.size(),
+                    s.sanitizeLogging(user.getId()),
+                    savedCollection.getCollectionStatus());
         } else {
             if (totalFiles > 0) {
-                log.info("No document collection created as all {} files failed validation for user {}", totalFiles, user.getId());
+                log.info("No document collection created as all {} files failed validation for user {}", totalFiles,
+                        s.sanitizeLogging(user.getId()));
             }
         }
 
-        // Determine the overall status for the API response based on all input files
         DocumentStatus apiResponseOverallStatus;
         if (totalFiles > 0 && successfulUploads == totalFiles) {
             apiResponseOverallStatus = DocumentStatus.COMPLETED;
         } else if (successfulUploads > 0 || (storageFailures > 0 && !processedFileEntries.isEmpty())) {
-            // If there's any success, or if there were files processed that resulted in storage failures
             apiResponseOverallStatus = DocumentStatus.PARTIALLY_COMPLETED;
-        } else { // All failed validation, or no files provided, or all processed files failed storage
+        } else {
             apiResponseOverallStatus = DocumentStatus.FAILED_UPLOAD;
         }
 
@@ -164,16 +168,17 @@ public class DocumentUploadImpl implements DocumentUploadService {
             if (totalFiles > 0 && validationFailures == totalFiles) {
                 apiResponseMessage = "All " + totalFiles + " document(s) failed validation. No documents were uploaded.";
             } else if (totalFiles > 0) {
-                apiResponseMessage = String.format("No documents were successfully uploaded. %d failed validation. %d failed storage. Check individual statuses.",
+                apiResponseMessage =
+                        String.format("No documents were successfully uploaded. %d failed validation. %d failed storage. Check individual statuses.",
                         validationFailures, storageFailures);
-            } else { // totalFiles == 0
+            } else {
                 apiResponseMessage = "No files provided for upload.";
             }
         }
 
         DocumentCollectionUploadData uploadData = DocumentCollectionUploadData.builder()
                 .collectionId(savedCollectionId)
-                .overallStatus(apiResponseOverallStatus) // Use the status reflecting all input files
+                .overallStatus(apiResponseOverallStatus)
                 .files(responseFileEntriesData)
                 .build();
 
@@ -184,6 +189,7 @@ public class DocumentUploadImpl implements DocumentUploadService {
                 .data(uploadData)
                 .build();
     }
+
 
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
@@ -196,108 +202,5 @@ public class DocumentUploadImpl implements DocumentUploadService {
                             ". Allowed types are: " + String.join(", ", documentConfigProperties.getAllowedFileTypes())
             );
         }
-    }
-
-    @Override
-    @Transactional
-    public DocumentCollectionResponse deleteDocument(String collectionId, String userId) {
-        DocumentCollection collection = documentCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new NotFoundException("Document collection not found with ID: " + collectionId));
-
-        if (!collection.getUser().getId().equals(userId)) {
-            throw new ForbiddenException("You are not authorized to delete this document collection.");
-        }
-
-        for (FileEntry fileEntry : new ArrayList<>(collection.getFiles())) { // Iterate over a copy if modifying
-            if ("SUCCESS".equals(fileEntry.getUploadStatus()) && fileEntry.getStorageId() != null) {
-                try {
-                    cloudinaryService.deleteFile(fileEntry.getStorageId());
-                    log.info("Deleted file with storage ID {} (document ID {}) from Cloudinary for collection {}",
-                            fileEntry.getStorageId(), fileEntry.getDocumentId(), collectionId);
-                } catch (Exception e) {
-                    log.error("Failed to delete file with storage ID {} (document ID {}) from Cloudinary for collection {}: {}",
-                            fileEntry.getStorageId(), fileEntry.getDocumentId(), collectionId, e.getMessage());
-                    // Potentially mark file as not deleted from storage or handle error
-                }
-            }
-        }
-        documentCollectionRepository.delete(collection);
-        log.info("Document collection {} deleted successfully.", collectionId);
-
-        return DocumentCollectionResponse.builder()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .status("success")
-                .message("Document collection deleted successfully.")
-                .data(null)
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public DocumentCollectionResponse deleteFileFromCollection(String collectionId, String documentId, String userId) {
-        DocumentCollection collection = documentCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new NotFoundException("Document collection not found with ID: " + collectionId));
-
-        if (!collection.getUser().getId().equals(userId)) {
-            throw new ForbiddenException("You are not authorized to modify this document collection.");
-        }
-
-        Optional<FileEntry> fileToRemoveOpt = collection.getFiles().stream()
-                .filter(fileEntry -> documentId.equals(fileEntry.getDocumentId()))
-                .findFirst();
-
-        if (fileToRemoveOpt.isEmpty()) {
-            throw new NotFoundException("File with document ID: " + documentId + " not found in collection: " + collectionId);
-        }
-
-        FileEntry entryToRemove = fileToRemoveOpt.get();
-
-        if ("SUCCESS".equals(entryToRemove.getUploadStatus()) && entryToRemove.getStorageId() != null) {
-            try {
-                cloudinaryService.deleteFile(entryToRemove.getStorageId());
-                log.info("Successfully deleted file with storage ID {} (document ID {}) from Cloudinary.",
-                        entryToRemove.getStorageId(), entryToRemove.getDocumentId());
-            } catch (Exception e) {
-                log.error("Failed to delete file with storage ID {} (document ID {}) from Cloudinary. It will still be removed from the database. Error: {}",
-                        entryToRemove.getStorageId(), entryToRemove.getDocumentId(), e.getMessage());
-            }
-        }
-
-        boolean removed = collection.getFiles().remove(entryToRemove);
-        if (!removed) {
-            // This case should ideally not happen if fileToRemoveOpt was present and lists are handled correctly
-            log.warn("FileEntry with document ID {} was found but not removed from the collection's list. Collection ID: {}", documentId, collectionId);
-            // Consider if an exception should be thrown or how to handle this inconsistency
-        }
-
-
-        if (collection.getFiles().isEmpty()) {
-            documentCollectionRepository.delete(collection);
-            log.info("Document collection {} was empty after file (document ID {}) deletion and has been removed.", collectionId, documentId);
-        } else {
-            // Recalculate collection status based on remaining files
-            boolean allRemainingSucceeded = collection.getFiles().stream()
-                    .allMatch(fe -> "SUCCESS".equals(fe.getUploadStatus()));
-            boolean anyRemainingSucceeded = collection.getFiles().stream()
-                    .anyMatch(fe -> "SUCCESS".equals(fe.getUploadStatus()));
-
-            if (allRemainingSucceeded) {
-                collection.setCollectionStatus(DocumentStatus.COMPLETED);
-            } else if (anyRemainingSucceeded) {
-                collection.setCollectionStatus(DocumentStatus.PARTIALLY_COMPLETED);
-            } else { // All remaining files have a non-SUCCESS status (e.g., FAILED_STORAGE_UPLOAD)
-                collection.setCollectionStatus(DocumentStatus.FAILED_UPLOAD);
-            }
-            documentCollectionRepository.save(collection);
-            log.info("File with document ID {} removed from collection {}. Collection updated. New status: {}. Remaining files: {}",
-                    documentId, collectionId, collection.getCollectionStatus(), collection.getFiles().size());
-        }
-
-        return DocumentCollectionResponse.builder()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .status("success")
-                .message("File with document ID " + documentId + " deleted successfully from collection " + collectionId)
-                .data(null)
-                .build();
     }
 }
