@@ -88,13 +88,11 @@ public class DeleteUserImpl implements DeleteUserService {
                 cloudinaryService.deleteFile(user.getProfilePicture());
             }
 
-            // Optionally, delete user verification data if applicable
             if (user.getUserVerification() != null) {
                 userVerificationRepository.delete(user.getUserVerification());
             }
         }
 
-        // Delete users from the repository
         userRepository.deleteAll(usersToDelete);
     }
 

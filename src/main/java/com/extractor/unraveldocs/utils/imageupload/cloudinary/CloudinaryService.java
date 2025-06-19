@@ -37,9 +37,9 @@ public class CloudinaryService {
         }
     }
 
-    public void deleteFile(String publicId) {
+    public void deleteFile(String fileUrl) {
         try {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            cloudinary.uploader().destroy(fileUrl, ObjectUtils.emptyMap());
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete file from Cloudinary", e);
         }

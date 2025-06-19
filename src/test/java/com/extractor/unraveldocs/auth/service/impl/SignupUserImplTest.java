@@ -14,7 +14,6 @@ import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateServi
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +23,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -43,9 +39,6 @@ class SignupUserImplTest {
 
     @Mock
     private ResponseBuilderService responseBuilder;
-
-    @Mock
-    private CloudinaryService cloudinaryService;
 
     @Mock
     private DateHelper dateHelper;
@@ -78,25 +71,13 @@ class SignupUserImplTest {
                 "doe",
                 "john.doe@example.com",
                 "P@ssw0rd123",
-                "P@ssw0rd123",
-                null
+                "P@ssw0rd123"
         );
     }
 
     @Test
-    void registerUser_SuccessfulRegistrationWithoutProfilePicture_ReturnsSignupResponse() {
+    void registerUser_SuccessfulRegistration_ReturnsSignupResponse() {
         // Arrange
-        User user = new User();
-        user.setId(String.valueOf(1L));
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john.doe@example.com");
-        user.setProfilePicture(null);
-        user.setVerified(false);
-        user.setActive(false);
-        user.setRole(Role.USER);
-        user.setLastLogin(null);
-
         SignupData data = SignupData.builder()
                 .id(String.valueOf(1L))
                 .firstName("John")
@@ -162,23 +143,11 @@ class SignupUserImplTest {
         verify(responseBuilder).buildUserResponse(
                 any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
         );
-        verifyNoInteractions(cloudinaryService);
     }
 
     @Test
     void registerUser_FirstUser_SetsSuperAdminRole() {
         // Arrange
-        User user = new User();
-        user.setId(String.valueOf(1L));
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john.doe@example.com");
-        user.setProfilePicture(null);
-        user.setVerified(false);
-        user.setActive(false);
-        user.setRole(Role.SUPER_ADMIN);
-        user.setLastLogin(null);
-
         SignupData data = SignupData.builder()
                 .id(String.valueOf(1L))
                 .firstName("John")
@@ -234,7 +203,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder, cloudinaryService);
+                templatesService, responseBuilder);
     }
 
     @Test
@@ -245,8 +214,7 @@ class SignupUserImplTest {
                 "doe",
                 "john.doe@example.com",
                 "john.doe@example.com",
-                "john.doe@example.com",
-                null
+                "john.doe@example.com"
         );
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
 
@@ -256,135 +224,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder, cloudinaryService);
-    }
-
-    @Test
-    void registerUser_WithProfilePicture_SuccessfulUpload() {
-        // Arrange
-        MultipartFile profilePicture = new MockMultipartFile(
-                "profilePicture",
-                "profile.jpg",
-                "image/jpeg",
-                "test image".getBytes()
-        );
-        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
-                "john",
-                "doe",
-                "john.doe@example.com",
-                "P@ssw0rd123",
-                "P@ssw0rd123",
-                profilePicture
-        );
-
-        User user = new User();
-        user.setId(String.valueOf(1L));
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john.doe@example.com");
-        user.setProfilePicture("https://cloudinary.com/images/profile_pictures/unique-profile.jpg");
-        user.setVerified(false);
-        user.setActive(false);
-        user.setRole(Role.USER);
-        user.setLastLogin(null);
-
-        SignupData data = SignupData.builder()
-                .id(String.valueOf(1L))
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .profilePicture("https://cloudinary.com/images/profile_pictures/unique-profile.jpg")
-                .isVerified(false)
-                .isActive(false)
-                .role(Role.USER)
-                .lastLogin(null)
-                .build();
-
-        UserResponse<SignupData> expectedResponse = new UserResponse<>();
-        expectedResponse.setStatusCode(HttpStatus.CREATED.value());
-        expectedResponse.setStatus("success");
-        expectedResponse.setMessage("User registered successfully");
-        expectedResponse.setData(data);
-
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
-        when(userRepository.superAdminExists()).thenReturn(false);
-        when(cloudinaryService.uploadFile(
-                eq(profilePicture), eq("profile_pictures"),
-                eq(profilePicture.getOriginalFilename()), eq("image")))
-                .thenReturn("https://cloudinary.com/images/profile_pictures/unique-profile.jpg");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User savedUser = invocation.getArgument(0);
-            savedUser.setId(String.valueOf(1L));
-            return savedUser;
-        });
-        when(responseBuilder.buildUserResponse(
-                any(SignupData.class), eq(HttpStatus.CREATED), eq("User registered successfully")
-        )).thenReturn(expectedResponse);
-
-        // Act
-        UserResponse<SignupData> response = signupUserService.registerUser(requestWithPicture);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED.value(), response.getStatusCode());
-        assertEquals("https://cloudinary.com/images/profile_pictures/unique-profile.jpg", response.getData().profilePicture());
-        verify(cloudinaryService).uploadFile(
-                eq(profilePicture), eq("profile_pictures"),
-                eq(profilePicture.getOriginalFilename()), eq("image"));
-        verify(userRepository).save(argThat(u ->
-                u.getProfilePicture().equals("https://cloudinary.com/images/profile_pictures/unique-profile.jpg")));
-    }
-
-    @Test
-    void registerUser_ProfilePictureUploadFails_ThrowsBadRequestException() {
-        // Arrange
-        MultipartFile profilePicture = new MockMultipartFile(
-                "profilePicture",
-                "profile.jpg",
-                "image/jpeg",
-                "test image".getBytes()
-        );
-        SignUpRequestDto requestWithPicture = new SignUpRequestDto(
-                "john",
-                "doe",
-                "john.doe@example.com",
-                "P@ssw0rd123",
-                "P@ssw0rd123",
-                profilePicture
-        );
-
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John", "Doe");
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(cloudinaryService.uploadFile(
-                eq(profilePicture), eq("profile_pictures"),
-                eq(profilePicture.getOriginalFilename()), eq("image")))
-                .thenThrow(new RuntimeException("Cloudinary upload failed"));
-
-        // Act & Assert
-        assertThrows(BadRequestException.class, () -> signupUserService.registerUser(requestWithPicture),
-                "Failed to upload profile picture");
-
-        // Verify only the expected interactions
-        verify(userRepository).existsByEmail("john.doe@example.com");
-        verify(userLibrary, times(2)).capitalizeFirstLetterOfName(anyString());
-        verify(passwordEncoder).encode("P@ssw0rd123");
-        verify(verificationToken).generateVerificationToken();
-        verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
-        verify(cloudinaryService).uploadFile(
-                eq(profilePicture), eq("profile_pictures"),
-                eq(profilePicture.getOriginalFilename()), eq("image"));
-
-        // Verify no user was saved
-        verify(userRepository, never()).save(any());
-        verifyNoInteractions(templatesService, responseBuilder);
+                templatesService, responseBuilder);
     }
 
     @Test
@@ -411,7 +251,6 @@ class SignupUserImplTest {
 
         // Assert
         verify(userRepository).save(argThat(u -> {
-            // Verify UserVerification properties
             UserVerification verification = u.getUserVerification();
             boolean verificationCorrect = verification.getEmailVerificationToken().equals("verificationToken") &&
                     verification.getStatus() == VerifiedStatus.PENDING &&
@@ -420,7 +259,6 @@ class SignupUserImplTest {
                     verification.getPasswordResetToken() == null &&
                     verification.getPasswordResetTokenExpiry() == null;
 
-            // Verify LoginAttempts is created and associated with the user
             LoginAttempts loginAttempts = u.getLoginAttempts();
             boolean loginAttemptsCorrect = loginAttempts != null &&
                     loginAttempts.getUser() == u;

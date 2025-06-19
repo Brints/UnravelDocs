@@ -2,16 +2,17 @@ package com.extractor.unraveldocs.user.controller;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
+import com.extractor.unraveldocs.exceptions.custom.TooManyRequestsException;
 import com.extractor.unraveldocs.user.dto.UserData;
-import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
-import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
-import com.extractor.unraveldocs.user.dto.request.ProfileUpdateRequestDto;
-import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
+import com.extractor.unraveldocs.user.dto.request.*;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.user.service.UserService;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Refill;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,12 +20,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -34,97 +43,95 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
 
-    /**
-     * Get the profile of the currently authenticated user.
-     *
-     * @return ResponseEntity containing the user profile information.
-     */
+    private final Map<String, Bucket> forgotPasswordBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> resetPasswordBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> userActionBuckets = new ConcurrentHashMap<>();
+
+    private User getAuthenticatedUser(UserDetails authenticatedUser) {
+        if (authenticatedUser == null) {
+            throw new ForbiddenException("Please login to perform this action.");
+        }
+        return userRepository.findByEmail(authenticatedUser.getUsername())
+                .orElseThrow(() -> new ForbiddenException("User not found"));
+    }
+
+    private Bucket createForgotPasswordBucket(String key) {
+        Bandwidth limit = Bandwidth.classic(5, Refill.greedy(5, Duration.ofHours(1)));
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    private Bucket createResetPasswordBucket(String key) {
+        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofHours(1)));
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    private Bucket createUserActionBucket(String key) {
+        Bandwidth limit = Bandwidth.classic(20, Refill.greedy(20, Duration.ofMinutes(1)));
+        return Bucket.builder().addLimit(limit).build();
+    }
+
     @Operation(summary = "Get current user profile")
     @GetMapping("/me")
     public ResponseEntity<?> getAuthenticatedUserProfile(
             @AuthenticationPrincipal UserDetails authenticatedUser
     ) {
-
-        if (authenticatedUser == null) {
-            throw new ForbiddenException("Please login to view your profile");
-        }
-
-        // Call the user service to get the profile data
-        User user = userRepository.findByEmail(authenticatedUser.getUsername())
-                .orElseThrow(() -> new ForbiddenException("User not found"));
-        String userId = user.getId();
-
-        return ResponseEntity.ok(userService.getUserProfileByOwner(userId));
+        User user = getAuthenticatedUser(authenticatedUser);
+        return ResponseEntity.ok(userService.getUserProfileByOwner(user.getId()));
     }
 
-    /**
-     * Forgot password implementation to send a password reset link to the user's email.
-     *
-     * @param forgotPasswordDto The DTO containing the email address of the user requesting a password reset.
-     * @return ResponseEntity indicating the result of the operation.
-     */
     @Operation(summary = "Forgot password")
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(
             @Valid @RequestBody ForgotPasswordDto forgotPasswordDto
-            ) {
+    ) {
+        Bucket bucket = forgotPasswordBuckets.computeIfAbsent(
+                forgotPasswordDto.email(), this::createForgotPasswordBucket);
 
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException(
+                    "You have made too many password reset requests. Please try again later."
+            );
+        }
         return ResponseEntity.ok(userService.forgotPassword(forgotPasswordDto));
     }
 
-    /**
-     * Reset password implementation to update the user's password.
-     *
-     * @param resetPasswordDto The DTO containing the new password and confirmation.
-     * @return ResponseEntity indicating the result of the operation.
-     */
     @Operation(summary = "Reset password")
     @PostMapping("/reset-password/{token}/{email}")
     public ResponseEntity<?> resetPassword(
-            @Parameter(description = "Password reset token")
-            @PathVariable String token,
-
-            @Parameter(description = "Email address of the user")
-            @PathVariable String email,
-
-            @Parameter(description = "New password and confirmation")
-            @Valid @RequestBody ResetPasswordDto resetPasswordDto
-            ) {
+            @Parameter(description = "Password reset token") @PathVariable String token,
+            @Parameter(description = "Email address of the user") @PathVariable String email,
+            @Parameter(description = "New password and confirmation") @Valid @RequestBody ResetPasswordDto resetPasswordDto
+    ) {
+        Bucket bucket = resetPasswordBuckets.computeIfAbsent(email, this::createResetPasswordBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException("You have made too many password reset attempts. Please try again later.");
+        }
         return ResponseEntity.ok(userService.resetPassword(new PasswordResetParams(email, token), resetPasswordDto));
     }
 
-    /**
-     * Change password implementation to update the user's password.
-     *
-     * @param changePasswordDto The DTO containing the current and new passwords.
-     * @return ResponseEntity indicating the result of the operation.
-     */
     @Operation(summary = "Change password")
     @PostMapping("/change-password")
     public ResponseEntity<UserResponse<Void>> changePassword(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @RequestBody ChangePasswordDto changePasswordDto
     ) {
-        if (authenticatedUser == null) {
-            throw new ForbiddenException("Please login to change your password");
+        User user = getAuthenticatedUser(authenticatedUser);
+        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException(
+                    "You have made too many password change requests. Please try again later.");
         }
         return ResponseEntity.ok(userService.changePassword(changePasswordDto));
     }
 
-    /**
-     * Update the profile of the currently authenticated user.
-     *
-     * @param request The request containing the updated profile information.
-     * @return ResponseEntity indicating the result of the operation.
-     */
     @Operation(summary = "Update user profile",
             description = "User can update some information in their profile.",
             responses = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "User profile retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            )
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User profile retrieved successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    )
             }
     )
     @PutMapping(value = "/update-profile",
@@ -137,42 +144,119 @@ public class UserController {
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @ModelAttribute ProfileUpdateRequestDto request
     ) {
-        if (authenticatedUser == null) {
-            throw new ForbiddenException("Please login to update your profile");
-        }
+        User user = getAuthenticatedUser(authenticatedUser);
 
         if (request == null) {
             throw new BadRequestException("Request body cannot be null");
         }
 
-        String userEmail = authenticatedUser.getUsername();
-        String userId = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ForbiddenException("User not found"))
-                .getId();
+        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException("You have made too many profile update requests. Please try again later.");
+        }
 
-        return ResponseEntity.ok(userService.updateProfile(request, userId));
+        return ResponseEntity.ok(userService.updateProfile(request, user.getId()));
     }
 
-    /**
-     * Delete the profile of the currently authenticated user.
-     *
-     * @param authenticatedUser The authenticated user whose profile is to be deleted.
-     * @return ResponseEntity indicating the result of the operation.
-     */
     @Operation(summary = "Delete user profile")
     @DeleteMapping("/delete-account")
     public ResponseEntity<?> deleteUser(
             @AuthenticationPrincipal UserDetails authenticatedUser
     ) {
-        if (authenticatedUser == null) {
-            throw new ForbiddenException("Please login to delete your profile");
+        User user = getAuthenticatedUser(authenticatedUser);
+
+        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException(
+                    "You have made too many account deletion requests. Please try again later."
+            );
+        }
+        userService.deleteUser(user.getId());
+        return ResponseEntity.ok("User profile deleted successfully");
+    }
+
+    @Operation(summary = "Upload profile picture",
+            description = "User can upload a profile picture.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Profile picture uploaded successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid file type or empty file",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    )
+            }
+    )
+    @PostMapping(value = "/upload-profile-picture", consumes = "multipart/form-data")
+    public ResponseEntity<UserResponse<String>> uploadProfilePicture(
+            @AuthenticationPrincipal UserDetails authenticatedUser,
+            @RequestParam("file") @NotNull MultipartFile file
+    ) {
+        // Validate the authenticated user
+        User user = getAuthenticatedUser(authenticatedUser);
+
+        // Validate the file
+        if (file.isEmpty()) {
+            throw new BadRequestException("File cannot be empty");
+        }
+        if (!Objects.requireNonNull(file.getContentType()).startsWith("image/")) {
+            return ResponseEntity.badRequest().body(
+                    new UserResponse<>(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "error",
+                            "Invalid file type",
+                            null));
         }
 
-        String userId = userRepository.findByEmail(authenticatedUser.getUsername())
-                .orElseThrow(() -> new ForbiddenException("User not found"))
-                .getId();
+        // Create a bucket for user actions if it doesn't exist
+        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException(
+                    "You have made too many profile picture upload requests. Please try again later.");
+        }
 
-        userService.deleteUser(userId);
-        return ResponseEntity.ok("User profile deleted successfully");
+        return ResponseEntity.ok(userService.uploadProfilePicture(user, file));
+    }
+
+@Operation(summary = "Delete profile picture",
+            description = "User can delete their profile picture.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Profile picture deleted successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Profile picture not found or already deleted",
+                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                    )
+            }
+    )
+    @DeleteMapping("/delete-profile-picture")
+    public ResponseEntity<UserResponse<Void>> deleteProfilePicture(
+            @AuthenticationPrincipal UserDetails authenticatedUser
+    ) {
+        User user = getAuthenticatedUser(authenticatedUser);
+
+        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new TooManyRequestsException(
+                    "You have made too many profile picture deletion requests. Please try again later."
+            );
+        }
+        userService.deleteProfilePicture(user);
+
+        var response = new UserResponse<Void>(
+                HttpStatus.OK.value(),
+                "success",
+                "Profile picture deleted successfully",
+                null
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

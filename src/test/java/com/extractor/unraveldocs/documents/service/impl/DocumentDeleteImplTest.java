@@ -2,6 +2,7 @@ package com.extractor.unraveldocs.documents.service.impl;
 
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
+import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
@@ -62,14 +63,14 @@ public class DocumentDeleteImplTest {
     @Test
     void deleteDocument_success() {
         // Arrange
-        // Moved sanitizeLogging stubbing here
         when(s.sanitizeLogging(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
         String collectionId = UUID.randomUUID().toString();
         String file1StorageId = "storageId1";
         String file1DocumentId = UUID.randomUUID().toString();
+        String file1Url = "https://cloudinary.com/storageId1";
 
-        FileEntry fileEntry1 = FileEntry.builder().documentId(file1DocumentId).storageId(file1StorageId).uploadStatus("SUCCESS").build();
+        FileEntry fileEntry1 = FileEntry.builder().documentId(file1DocumentId).storageId(file1StorageId).fileUrl(file1Url).uploadStatus("SUCCESS").build();
         DocumentCollection collection = DocumentCollection.builder()
                 .id(collectionId)
                 .user(testUser)
@@ -77,7 +78,7 @@ public class DocumentDeleteImplTest {
                 .collectionStatus(DocumentStatus.COMPLETED)
                 .build();
         when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(file1StorageId);
+        doNothing().when(cloudinaryService).deleteFile(file1Url);
         doNothing().when(documentCollectionRepository).delete(collection);
 
         // Act
@@ -85,7 +86,7 @@ public class DocumentDeleteImplTest {
 
         // Assert
         verify(documentCollectionRepository).findById(collectionId);
-        verify(cloudinaryService).deleteFile(file1StorageId);
+        verify(cloudinaryService).deleteFile(file1Url);
         verify(documentCollectionRepository).delete(collection);
 
         verify(s).sanitizeLogging(file1StorageId);
@@ -139,9 +140,10 @@ public class DocumentDeleteImplTest {
         String collectionId = UUID.randomUUID().toString();
         String documentIdToRemove = UUID.randomUUID().toString();
         String storageIdToRemove = "storageIdToRemove";
+        String urlToRemove = "https://cloudinary.com/storageIdToRemove";
 
-        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).uploadStatus("SUCCESS").build();
-        FileEntry remainingFile = FileEntry.builder().documentId(UUID.randomUUID().toString()).storageId("otherStorageId").uploadStatus("SUCCESS").build();
+        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).fileUrl(urlToRemove).uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
+        FileEntry remainingFile = FileEntry.builder().documentId(UUID.randomUUID().toString()).storageId("otherStorageId").fileUrl("https://cloudinary.com/otherStorageId").uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
         List<FileEntry> files = new ArrayList<>(List.of(fileToRemove, remainingFile));
 
         DocumentCollection collection = DocumentCollection.builder()
@@ -152,7 +154,7 @@ public class DocumentDeleteImplTest {
                 .build();
 
         when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(storageIdToRemove);
+        doNothing().when(cloudinaryService).deleteFile(urlToRemove);
         when(documentCollectionRepository.save(any(DocumentCollection.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 
@@ -160,7 +162,7 @@ public class DocumentDeleteImplTest {
         documentDeleteService.deleteFileFromCollection(collectionId, documentIdToRemove, testUser.getId());
 
         // Assert
-        verify(cloudinaryService).deleteFile(storageIdToRemove);
+        verify(cloudinaryService).deleteFile(urlToRemove);
 
         ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
         verify(documentCollectionRepository).save(collectionCaptor.capture());
@@ -187,8 +189,9 @@ public class DocumentDeleteImplTest {
         String collectionId = UUID.randomUUID().toString();
         String documentIdToRemove = UUID.randomUUID().toString();
         String storageIdToRemove = "storageIdToRemove";
+        String urlToRemove = "https://cloudinary.com/storageIdToRemove";
 
-        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).uploadStatus("SUCCESS").build();
+        FileEntry fileToRemove = FileEntry.builder().documentId(documentIdToRemove).storageId(storageIdToRemove).fileUrl(urlToRemove).uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
         List<FileEntry> files = new ArrayList<>(List.of(fileToRemove));
 
         DocumentCollection collection = DocumentCollection.builder()
@@ -199,7 +202,7 @@ public class DocumentDeleteImplTest {
                 .build();
 
         when(documentCollectionRepository.findById(collectionId)).thenReturn(Optional.of(collection));
-        doNothing().when(cloudinaryService).deleteFile(storageIdToRemove);
+        doNothing().when(cloudinaryService).deleteFile(urlToRemove);
         doNothing().when(documentCollectionRepository).delete(any(DocumentCollection.class));
 
 
@@ -207,7 +210,7 @@ public class DocumentDeleteImplTest {
         documentDeleteService.deleteFileFromCollection(collectionId, documentIdToRemove, testUser.getId());
 
         // Assert
-        verify(cloudinaryService).deleteFile(storageIdToRemove);
+        verify(cloudinaryService).deleteFile(urlToRemove);
         verify(documentCollectionRepository).delete(collection); // Verifies the collection itself is deleted
         verify(documentCollectionRepository, never()).save(any(DocumentCollection.class)); // Save should not be called
         assertTrue(collection.getFiles().isEmpty()); // The list within the 'collection' instance is modified
@@ -260,7 +263,7 @@ public class DocumentDeleteImplTest {
         anotherUser.setId(UUID.randomUUID().toString());
 
 
-        FileEntry existingFile = FileEntry.builder().documentId(documentId).storageId("someStorageId").build();
+        FileEntry existingFile = FileEntry.builder().documentId(documentId).storageId("someStorageId").fileUrl("https://cloudinary.com/someStorageId").build();
         DocumentCollection collection = DocumentCollection.builder()
                 .id(collectionId)
                 .user(anotherUser)

@@ -5,6 +5,7 @@ import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionUpload
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
 import com.extractor.unraveldocs.documents.dto.response.FileEntryData;
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
+import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
 import com.extractor.unraveldocs.documents.interfaces.DocumentUploadService;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
@@ -15,6 +16,8 @@ import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +39,8 @@ public class DocumentUploadImpl implements DocumentUploadService {
 
     @Override
     @Transactional
-    public DocumentCollectionResponse uploadDocuments(MultipartFile[] files, User user) {
+    @CacheEvict(value = "documentCollections", key = "#user.id")
+    public DocumentCollectionResponse<DocumentCollectionUploadData> uploadDocuments(MultipartFile[] files, User user) {
         List<FileEntry> processedFileEntries = new ArrayList<>();
         List<FileEntryData> responseFileEntriesData = new ArrayList<>();
 
@@ -70,30 +74,28 @@ public class DocumentUploadImpl implements DocumentUploadService {
 
                     fileEntryBuilder.fileUrl(fileUrl)
                             .storageId(publicId)
-                            .uploadStatus("SUCCESS");
+                            .uploadStatus(DocumentUploadState.SUCCESS.toString());
 
                     FileEntry fileEntry = fileEntryBuilder.build();
                     processedFileEntries.add(fileEntry);
 
                     fileEntryDataBuilder.documentId(fileEntry.getDocumentId())
                             .fileUrl(fileUrl)
-                            .status("SUCCESS")
-                            .message("Uploaded successfully.");
+                            .status(DocumentUploadState.SUCCESS.toString());
                     successfulUploads++;
                 } catch (Exception storageEx) {
                     log.error("Failed to upload validated file {} to storage: {}",
                             s.sanitizeLogging(originalFilename),
                             s.sanitizeLogging(storageEx.getMessage()),
                             storageEx);
-                    fileEntryBuilder.uploadStatus("FAILED_STORAGE_UPLOAD")
+                    fileEntryBuilder.uploadStatus(DocumentUploadState.FAILED_STORAGE_UPLOAD.toString())
                             .errorMessage("Storage upload failed: " + storageEx.getMessage());
 
                     FileEntry fileEntry = fileEntryBuilder.build();
                     processedFileEntries.add(fileEntry);
 
                     fileEntryDataBuilder.documentId(fileEntry.getDocumentId())
-                            .status("FAILED_STORAGE")
-                            .message("Storage upload error: " + storageEx.getMessage());
+                            .status(DocumentUploadState.FAILED_STORAGE.toString());
                     storageFailures++;
                 }
             } catch (BadRequestException | IllegalArgumentException validationEx) {
@@ -102,8 +104,7 @@ public class DocumentUploadImpl implements DocumentUploadService {
                         s.sanitizeLogging(validationEx.getMessage()));
                 String tempDocumentId = java.util.UUID.randomUUID().toString();
                 fileEntryDataBuilder.documentId(tempDocumentId)
-                        .status("FAILED_VALIDATION")
-                        .message("Validation error: " + validationEx.getMessage());
+                        .status(DocumentUploadState.FAILED_VALIDATION.toString());
                 validationFailures++;
             }
             responseFileEntriesData.add(fileEntryDataBuilder.build());
@@ -119,9 +120,9 @@ public class DocumentUploadImpl implements DocumentUploadService {
                     .build();
 
             boolean allProcessedSucceededInStorage = processedFileEntries.stream()
-                    .allMatch(fe -> "SUCCESS".equals(fe.getUploadStatus()));
+                    .allMatch(fe -> DocumentUploadState.SUCCESS.toString().equals(fe.getUploadStatus()));
             boolean anyProcessedSucceededInStorage = processedFileEntries.stream()
-                    .anyMatch(fe -> "SUCCESS".equals(fe.getUploadStatus()));
+                    .anyMatch(fe -> DocumentUploadState.SUCCESS.toString().equals(fe.getUploadStatus()));
 
             if (allProcessedSucceededInStorage) {
                 documentCollection.setCollectionStatus(DocumentStatus.COMPLETED);
@@ -182,7 +183,7 @@ public class DocumentUploadImpl implements DocumentUploadService {
                 .files(responseFileEntriesData)
                 .build();
 
-        return DocumentCollectionResponse.builder()
+        return DocumentCollectionResponse.<DocumentCollectionUploadData>builder()
                 .statusCode(HttpStatus.OK.value())
                 .status(apiResponseStatusString)
                 .message(apiResponseMessage)

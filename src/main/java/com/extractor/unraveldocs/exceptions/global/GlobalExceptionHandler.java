@@ -121,6 +121,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(specificErrorResponse);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ResponseEntity<ErrorResponse> handleTooManyRequestsException(TooManyRequestsException ex) {
+        errorResponse.setStatusCode(HttpStatus.TOO_MANY_REQUESTS.value());
+        errorResponse.setError(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase());
+        errorResponse.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {

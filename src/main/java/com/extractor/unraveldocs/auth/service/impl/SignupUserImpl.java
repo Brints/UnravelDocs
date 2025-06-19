@@ -15,7 +15,6 @@ import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateServi
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import com.extractor.unraveldocs.utils.userlib.DateHelper;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SignupUserImpl implements SignupUserService {
     private final AuthEmailTemplateService templatesService;
-    private final CloudinaryService cloudinaryService;
     private final DateHelper dateHelper;
     private final GenerateVerificationToken verificationToken;
     private final PasswordEncoder passwordEncoder;
@@ -62,26 +60,12 @@ public class SignupUserImpl implements SignupUserService {
         boolean noSuperAdmin = userRepository.superAdminExists();
         Role role = noSuperAdmin ? Role.SUPER_ADMIN : Role.USER;
 
-        String profilePictureUrl = null;
-        if (request.profilePicture() != null && !request.profilePicture().isEmpty()) {
-            try {
-                profilePictureUrl = cloudinaryService.uploadFile(
-                        request.profilePicture(),
-                        CloudinaryService.getPROFILE_PICTURE_FOLDER(),
-                        request.profilePicture().getOriginalFilename(),
-                        CloudinaryService.getRESOURCE_TYPE_IMAGE());
-            } catch (Exception e) {
-                log.error("Error uploading profile picture: {}", e.getMessage());
-                throw new BadRequestException("Failed to upload profile picture");
-            }
-        }
-
         User user = new User();
         user.setEmail(request.email().toLowerCase());
         user.setPassword(encryptedPassword);
         user.setFirstName(firstName);
         user.setLastName(lastName);
-        user.setProfilePicture(profilePictureUrl);
+        user.setProfilePicture(null);
         user.setActive(false);
         user.setVerified(false);
         user.setRole(role);

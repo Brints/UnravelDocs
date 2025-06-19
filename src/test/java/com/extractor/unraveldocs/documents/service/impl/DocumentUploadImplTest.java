@@ -2,8 +2,10 @@ package com.extractor.unraveldocs.documents.service.impl;
 
 import com.extractor.unraveldocs.config.DocumentConfigProperties;
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
+import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionUploadData;
 import com.extractor.unraveldocs.documents.dto.response.FileEntryData;
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
+import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
@@ -17,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +28,7 @@ import com.extractor.unraveldocs.auth.enums.Role;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +38,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class DocumentUploadImplTest {
 
     @Mock
@@ -96,8 +102,14 @@ class DocumentUploadImplTest {
                 .id(UUID.randomUUID().toString())
                 .user(testUser)
                 .files(new ArrayList<>(List.of(
-                        FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId).uploadStatus("SUCCESS").build(),
-                        FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile2.getOriginalFilename()).fileUrl(file2Url).storageId(file2StorageId).uploadStatus("SUCCESS").build()
+                        FileEntry.builder().documentId(UUID.randomUUID().toString())
+                                .originalFileName(validFile1.getOriginalFilename())
+                                .fileUrl(file1Url).storageId(file1StorageId)
+                                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build(),
+                        FileEntry.builder().documentId(UUID.randomUUID().toString())
+                                .originalFileName(validFile2.getOriginalFilename())
+                                .fileUrl(file2Url).storageId(file2StorageId)
+                                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build()
                 )))
                 .collectionStatus(DocumentStatus.COMPLETED)
                 .uploadTimestamp(OffsetDateTime.now())
@@ -105,7 +117,7 @@ class DocumentUploadImplTest {
         when(documentCollectionRepository.save(any(DocumentCollection.class))).thenReturn(savedCollection);
 
         // Act
-        DocumentCollectionResponse response = documentUploadService.uploadDocuments(files, testUser);
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
 
         // Assert
         assertNotNull(response);
@@ -119,7 +131,7 @@ class DocumentUploadImplTest {
 
         FileEntryData file1Data = response.getData().getFiles().stream().filter(f -> f.getOriginalFileName().equals(validFile1.getOriginalFilename())).findFirst().orElse(null);
         assertNotNull(file1Data);
-        assertEquals("SUCCESS", file1Data.getStatus());
+        assertEquals(DocumentUploadState.SUCCESS.toString(), file1Data.getStatus());
         assertEquals(file1Url, file1Data.getFileUrl());
         assertNotNull(file1Data.getDocumentId());
 
@@ -128,7 +140,9 @@ class DocumentUploadImplTest {
         verify(documentCollectionRepository).save(collectionCaptor.capture());
         DocumentCollection capturedCollection = collectionCaptor.getValue();
         assertEquals(2, capturedCollection.getFiles().size());
-        assertTrue(capturedCollection.getFiles().stream().allMatch(fe -> "SUCCESS".equals(fe.getUploadStatus())));
+        assertTrue(capturedCollection
+                .getFiles().stream()
+                .allMatch(fe -> DocumentUploadState.SUCCESS.toString().equals(fe.getUploadStatus())));
         assertEquals(DocumentStatus.COMPLETED, capturedCollection.getCollectionStatus());
     }
 
@@ -151,30 +165,36 @@ class DocumentUploadImplTest {
                 .files(new ArrayList<>(List.of(
                         FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId).uploadStatus("SUCCESS").build()
                 )))
-                .collectionStatus(DocumentStatus.COMPLETED) // Only successful files are in processedFileEntries
+                .collectionStatus(DocumentStatus.COMPLETED)
                 .uploadTimestamp(OffsetDateTime.now())
                 .build();
         when(documentCollectionRepository.save(any(DocumentCollection.class))).thenReturn(savedCollection);
 
 
         // Act
-        DocumentCollectionResponse response = documentUploadService.uploadDocuments(files, testUser);
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK.value(), response.getStatusCode());
         assertEquals("partial_success", response.getStatus());
-        assertTrue(response.getMessage().contains("1 document(s) uploaded successfully. 1 failed validation."));
+        assertEquals("1 document(s) uploaded successfully. 1 failed validation. 0 failed storage. Check individual statuses.", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(savedCollection.getId(), response.getData().getCollectionId());
         assertEquals(DocumentStatus.PARTIALLY_COMPLETED, response.getData().getOverallStatus());
         assertEquals(2, response.getData().getFiles().size());
 
-        FileEntryData successData = response.getData().getFiles().stream().filter(f -> "SUCCESS".equals(f.getStatus())).findFirst().orElse(null);
+        FileEntryData successData = response.getData()
+                .getFiles().stream()
+                .filter(f -> DocumentUploadState.SUCCESS.toString()
+                        .equals(f.getStatus())).findFirst().orElse(null);
         assertNotNull(successData);
         assertEquals(validFile1.getOriginalFilename(), successData.getOriginalFileName());
 
-        FileEntryData failedData = response.getData().getFiles().stream().filter(f -> "FAILED_VALIDATION".equals(f.getStatus())).findFirst().orElse(null);
+        FileEntryData failedData = response.getData()
+                .getFiles().stream()
+                .filter(f -> DocumentUploadState.FAILED_VALIDATION.toString()
+                        .equals(f.getStatus())).findFirst().orElse(null);
         assertNotNull(failedData);
         assertEquals(invalidFileTypeFile.getOriginalFilename(), failedData.getOriginalFileName());
         assertNotNull(failedData.getDocumentId());
@@ -182,7 +202,7 @@ class DocumentUploadImplTest {
         ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
         verify(documentCollectionRepository).save(collectionCaptor.capture());
         DocumentCollection capturedCollection = collectionCaptor.getValue();
-        assertEquals(1, capturedCollection.getFiles().size()); // Only one file was processed and added to the collection
+        assertEquals(1, capturedCollection.getFiles().size());
         assertEquals(DocumentStatus.COMPLETED, capturedCollection.getCollectionStatus());
     }
 
@@ -198,17 +218,19 @@ class DocumentUploadImplTest {
 
         when(cloudinaryService.uploadFile(eq(validFile1), anyString(), eq(validFile1.getOriginalFilename()), anyString())).thenReturn(file1Url);
         when(cloudinaryService.generateRandomPublicId(eq(validFile1.getOriginalFilename()))).thenReturn(file1StorageId);
-        // For validFile2, uploadFile will throw an exception.
-        // The generateRandomPublicId for validFile2 will not be called if uploadFile fails.
         when(cloudinaryService.uploadFile(eq(validFile2), anyString(), eq(validFile2.getOriginalFilename()), anyString())).thenThrow(new RuntimeException("Cloudinary down"));
 
 
         DocumentCollection savedCollection = DocumentCollection.builder()
                 .id(UUID.randomUUID().toString())
                 .user(testUser)
-                .files(new ArrayList<>(List.of( // This list will contain both entries, one success, one failed_storage
+                .files(new ArrayList<>(List.of(
                         FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId).uploadStatus("SUCCESS").build(),
-                        FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile2.getOriginalFilename()).uploadStatus("FAILED_STORAGE_UPLOAD").errorMessage("Storage upload failed: Cloudinary down").build()
+                        FileEntry.builder()
+                                .documentId(UUID.randomUUID().toString())
+                                .originalFileName(validFile2.getOriginalFilename())
+                                .uploadStatus(DocumentUploadState.FAILED_STORAGE_UPLOAD.toString())
+                                .errorMessage("Storage upload failed: Cloudinary down").build()
                 )))
                 .collectionStatus(DocumentStatus.PARTIALLY_COMPLETED)
                 .uploadTimestamp(OffsetDateTime.now())
@@ -216,23 +238,31 @@ class DocumentUploadImplTest {
         when(documentCollectionRepository.save(any(DocumentCollection.class))).thenReturn(savedCollection);
 
         // Act
-        DocumentCollectionResponse response = documentUploadService.uploadDocuments(files, testUser);
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK.value(), response.getStatusCode());
         assertEquals("partial_success", response.getStatus());
-        assertTrue(response.getMessage().contains("1 document(s) uploaded successfully. 0 failed validation. 1 failed storage."));
+        assertEquals("1 document(s) uploaded successfully. 0 failed validation. 1 failed storage. Check individual statuses.", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(savedCollection.getId(), response.getData().getCollectionId());
         assertEquals(DocumentStatus.PARTIALLY_COMPLETED, response.getData().getOverallStatus());
         assertEquals(2, response.getData().getFiles().size());
 
-        FileEntryData successData = response.getData().getFiles().stream().filter(f -> "SUCCESS".equals(f.getStatus())).findFirst().orElse(null);
+        FileEntryData successData = response
+                .getData()
+                .getFiles().stream()
+                .filter(f -> DocumentUploadState.SUCCESS.toString()
+                        .equals(f.getStatus())).findFirst().orElse(null);
         assertNotNull(successData);
         assertEquals(validFile1.getOriginalFilename(), successData.getOriginalFileName());
 
-        FileEntryData failedData = response.getData().getFiles().stream().filter(f -> "FAILED_STORAGE".equals(f.getStatus())).findFirst().orElse(null);
+        FileEntryData failedData = response
+                .getData()
+                .getFiles().stream()
+                .filter(f -> DocumentUploadState.FAILED_STORAGE.toString()
+                        .equals(f.getStatus())).findFirst().orElse(null);
         assertNotNull(failedData);
         assertEquals(validFile2.getOriginalFilename(), failedData.getOriginalFileName());
         assertNotNull(failedData.getDocumentId());
@@ -242,7 +272,10 @@ class DocumentUploadImplTest {
         DocumentCollection capturedCollection = collectionCaptor.getValue();
         assertEquals(2, capturedCollection.getFiles().size());
         assertEquals(DocumentStatus.PARTIALLY_COMPLETED, capturedCollection.getCollectionStatus());
-        assertTrue(capturedCollection.getFiles().stream().anyMatch(fe -> "FAILED_STORAGE_UPLOAD".equals(fe.getUploadStatus())));
+        assertTrue(capturedCollection
+                .getFiles().stream()
+                .anyMatch(fe -> DocumentUploadState.FAILED_STORAGE_UPLOAD.toString()
+                        .equals(fe.getUploadStatus())));
     }
 
 
@@ -254,7 +287,7 @@ class DocumentUploadImplTest {
         MultipartFile[] files = {invalidFileTypeFile, emptyFile};
 
         // Act
-        DocumentCollectionResponse response = documentUploadService.uploadDocuments(files, testUser);
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
 
         // Assert
         assertNotNull(response);
@@ -265,10 +298,81 @@ class DocumentUploadImplTest {
         assertNull(response.getData().getCollectionId());
         assertEquals(DocumentStatus.FAILED_UPLOAD, response.getData().getOverallStatus());
         assertEquals(2, response.getData().getFiles().size());
-        assertTrue(response.getData().getFiles().stream().allMatch(f -> "FAILED_VALIDATION".equals(f.getStatus())));
+        assertTrue(response
+                .getData()
+                .getFiles().stream()
+                .allMatch(f -> DocumentUploadState.FAILED_VALIDATION.toString()
+                        .equals(f.getStatus())));
 
         verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
     }
 
+    @Test
+    void uploadDocuments_failure_allFilesFailStorageUpload() {
+        // Arrange
+        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
+        when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
 
+        MultipartFile[] files = {validFile1, validFile2};
+
+        when(cloudinaryService.uploadFile(any(MultipartFile.class), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("Cloudinary down"));
+
+        DocumentCollection savedCollection = DocumentCollection.builder()
+                .id(UUID.randomUUID().toString())
+                .user(testUser)
+                .files(new ArrayList<>())
+                .collectionStatus(DocumentStatus.FAILED_UPLOAD)
+                .uploadTimestamp(OffsetDateTime.now())
+                .build();
+        when(documentCollectionRepository.save(any(DocumentCollection.class))).thenReturn(savedCollection);
+
+        // Act
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK.value(), response.getStatusCode());
+        assertEquals("failure", response.getStatus());
+        assertEquals("No documents were successfully uploaded. 0 failed validation. 2 failed storage. Check individual statuses.", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(savedCollection.getId(), response.getData().getCollectionId());
+        assertEquals(DocumentStatus.PARTIALLY_COMPLETED, response.getData().getOverallStatus());
+        assertEquals(2, response.getData().getFiles().size());
+        assertTrue(response
+                .getData()
+                .getFiles().stream()
+                .allMatch(f -> DocumentUploadState.FAILED_STORAGE.toString().equals(f.getStatus())));
+
+        ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
+        verify(documentCollectionRepository).save(collectionCaptor.capture());
+        DocumentCollection capturedCollection = collectionCaptor.getValue();
+        assertEquals(2, capturedCollection.getFiles().size());
+        assertEquals(DocumentStatus.FAILED_UPLOAD, capturedCollection.getCollectionStatus());
+        assertTrue(capturedCollection.
+                getFiles().stream()
+                .allMatch(fe -> DocumentUploadState.FAILED_STORAGE_UPLOAD.toString()
+                        .equals(fe.getUploadStatus())));
+    }
+
+    @Test
+    void uploadDocuments_failure_noFilesProvided() {
+        // Arrange
+        MultipartFile[] files = {};
+
+        // Act
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK.value(), response.getStatusCode());
+        assertEquals("failure", response.getStatus());
+        assertEquals("No files provided for upload.", response.getMessage());
+        assertNotNull(response.getData());
+        assertNull(response.getData().getCollectionId());
+        assertEquals(DocumentStatus.FAILED_UPLOAD, response.getData().getOverallStatus());
+        assertEquals(Collections.emptyList(), response.getData().getFiles());
+
+        verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
+    }
 }
