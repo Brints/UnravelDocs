@@ -15,5 +15,4 @@ public class FileEntryData {
     private Long fileSize;
     private String fileUrl;
     private String status;
-    private String message;
 }

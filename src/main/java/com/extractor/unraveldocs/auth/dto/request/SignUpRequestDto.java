@@ -2,10 +2,8 @@ package com.extractor.unraveldocs.auth.dto.request;
 
 import com.extractor.unraveldocs.auth.dto.PasswordMatches;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
-import org.springframework.web.multipart.MultipartFile;
 
 @Builder
 @Schema(description = "New User Sign Up Request DTO")
@@ -44,11 +42,7 @@ public record SignUpRequestDto(
 
         @Schema(description = "Confirm password of the user", example = "P@ssw0rd123")
         @NotNull(message = "Confirm password is required")
-        String confirmPassword,
-
-        @Schema(description = "Profile picture of the user (optional)")
-        @Nullable
-        MultipartFile profilePicture
+        String confirmPassword
 ) {
         @Override
         @SuppressWarnings("NullableProblems")
@@ -59,7 +53,6 @@ public record SignUpRequestDto(
                         ", email='" + (email != null ? "[REDACTED]" : "null") + '\'' +
                         ", password='[REDACTED]'" +
                         ", confirmPassword='[REDACTED]'" +
-                        ", profilePicture=" + (profilePicture != null ? "[FILE]" : "null") +
                         '}';
         }
 }
