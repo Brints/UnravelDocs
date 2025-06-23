@@ -19,10 +19,10 @@ public class FileEntry {
     @Column(name = "original_file_name", nullable = false)
     private String originalFileName;
 
-    @Column(name = "storage_id") // Cloudinary public ID, nullable if upload failed
+    @Column(name = "storage_id")
     private String storageId;
 
-    @Column(name = "file_url", length = 1024) // Nullable if upload failed
+    @Column(name = "file_url", length = 1024)
     private String fileUrl;
 
     @Column(name = "file_type", nullable = false)
