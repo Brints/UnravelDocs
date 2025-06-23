@@ -1,6 +1,5 @@
 package com.extractor.unraveldocs.auth.service;
 
-import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -9,7 +8,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.sns.model.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor

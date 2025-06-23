@@ -36,6 +36,11 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
 
     steps:
       - name: Checkout code
@@ -46,6 +51,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+
+      - name: Set up external dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client tesseract-ocr
 
       - name: Set up PostgreSQL client
         run: |

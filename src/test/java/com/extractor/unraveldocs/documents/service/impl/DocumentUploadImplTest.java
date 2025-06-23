@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.documents.service.impl;
 
+import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.config.DocumentConfigProperties;
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionUploadData;
@@ -10,8 +11,8 @@ import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
 import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
+import com.extractor.unraveldocs.ocrprocessing.utils.FileStorageService;
 import com.extractor.unraveldocs.user.model.User;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +25,6 @@ import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
-import com.extractor.unraveldocs.auth.enums.Role;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ class DocumentUploadImplTest {
     private DocumentCollectionRepository documentCollectionRepository;
 
     @Mock
-    private CloudinaryService cloudinaryService;
+    private FileStorageService fileStorageService;
 
     @Mock
     private DocumentConfigProperties documentConfigProperties;
@@ -85,7 +85,6 @@ class DocumentUploadImplTest {
     void uploadDocuments_success_allFilesUploaded() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-        when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
 
         MultipartFile[] files = {validFile1, validFile2};
         String file1Url = "https://cloudinary.com/file1.png";
@@ -93,24 +92,22 @@ class DocumentUploadImplTest {
         String file1StorageId = "storageId1";
         String file2StorageId = "storageId2";
 
-        when(cloudinaryService.uploadFile(eq(validFile1), anyString(), eq(validFile1.getOriginalFilename()), anyString())).thenReturn(file1Url);
-        when(cloudinaryService.generateRandomPublicId(eq(validFile1.getOriginalFilename()))).thenReturn(file1StorageId);
-        when(cloudinaryService.uploadFile(eq(validFile2), anyString(), eq(validFile2.getOriginalFilename()), anyString())).thenReturn(file2Url);
-        when(cloudinaryService.generateRandomPublicId(eq(validFile2.getOriginalFilename()))).thenReturn(file2StorageId);
+        FileEntry fileEntry1 = FileEntry.builder().documentId(UUID.randomUUID().toString())
+                .originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId)
+                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
+        FileEntry fileEntry2 = FileEntry.builder().documentId(UUID.randomUUID().toString())
+                .originalFileName(validFile2.getOriginalFilename()).fileUrl(file2Url).storageId(file2StorageId)
+                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
+
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+                .thenReturn(fileEntry1);
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename()), any()))
+                .thenReturn(fileEntry2);
 
         DocumentCollection savedCollection = DocumentCollection.builder()
                 .id(UUID.randomUUID().toString())
                 .user(testUser)
-                .files(new ArrayList<>(List.of(
-                        FileEntry.builder().documentId(UUID.randomUUID().toString())
-                                .originalFileName(validFile1.getOriginalFilename())
-                                .fileUrl(file1Url).storageId(file1StorageId)
-                                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build(),
-                        FileEntry.builder().documentId(UUID.randomUUID().toString())
-                                .originalFileName(validFile2.getOriginalFilename())
-                                .fileUrl(file2Url).storageId(file2StorageId)
-                                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build()
-                )))
+                .files(new ArrayList<>(List.of(fileEntry1, fileEntry2)))
                 .collectionStatus(DocumentStatus.COMPLETED)
                 .uploadTimestamp(OffsetDateTime.now())
                 .build();
@@ -133,7 +130,7 @@ class DocumentUploadImplTest {
         assertNotNull(file1Data);
         assertEquals(DocumentUploadState.SUCCESS.toString(), file1Data.getStatus());
         assertEquals(file1Url, file1Data.getFileUrl());
-        assertNotNull(file1Data.getDocumentId());
+        assertEquals(fileEntry1.getDocumentId(), file1Data.getDocumentId());
 
 
         ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
@@ -150,21 +147,22 @@ class DocumentUploadImplTest {
     void uploadDocuments_partialSuccess_oneFileFailsValidation() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-        when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
 
         MultipartFile[] files = {validFile1, invalidFileTypeFile};
         String file1Url = "https://cloudinary.com/file1.png";
         String file1StorageId = "storageId1";
 
-        when(cloudinaryService.uploadFile(eq(validFile1), anyString(), eq(validFile1.getOriginalFilename()), anyString())).thenReturn(file1Url);
-        when(cloudinaryService.generateRandomPublicId(eq(validFile1.getOriginalFilename()))).thenReturn(file1StorageId);
+        FileEntry fileEntry1 = FileEntry.builder().documentId(UUID.randomUUID().toString())
+                .originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId)
+                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
+
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+                .thenReturn(fileEntry1);
 
         DocumentCollection savedCollection = DocumentCollection.builder()
                 .id(UUID.randomUUID().toString())
                 .user(testUser)
-                .files(new ArrayList<>(List.of(
-                        FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId).uploadStatus("SUCCESS").build()
-                )))
+                .files(new ArrayList<>(List.of(fileEntry1)))
                 .collectionStatus(DocumentStatus.COMPLETED)
                 .uploadTimestamp(OffsetDateTime.now())
                 .build();
@@ -210,22 +208,26 @@ class DocumentUploadImplTest {
     void uploadDocuments_partialSuccess_oneFileFailsStorageUpload() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-        when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
 
         MultipartFile[] files = {validFile1, validFile2};
         String file1Url = "https://cloudinary.com/file1.png";
         String file1StorageId = "storageId1";
 
-        when(cloudinaryService.uploadFile(eq(validFile1), anyString(), eq(validFile1.getOriginalFilename()), anyString())).thenReturn(file1Url);
-        when(cloudinaryService.generateRandomPublicId(eq(validFile1.getOriginalFilename()))).thenReturn(file1StorageId);
-        when(cloudinaryService.uploadFile(eq(validFile2), anyString(), eq(validFile2.getOriginalFilename()), anyString())).thenThrow(new RuntimeException("Cloudinary down"));
+        FileEntry fileEntry1 = FileEntry.builder().documentId(UUID.randomUUID().toString())
+                .originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId)
+                .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
+
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+                .thenReturn(fileEntry1);
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename()), any()))
+                .thenThrow(new RuntimeException("Cloudinary down"));
 
 
         DocumentCollection savedCollection = DocumentCollection.builder()
                 .id(UUID.randomUUID().toString())
                 .user(testUser)
                 .files(new ArrayList<>(List.of(
-                        FileEntry.builder().documentId(UUID.randomUUID().toString()).originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId).uploadStatus("SUCCESS").build(),
+                        fileEntry1,
                         FileEntry.builder()
                                 .documentId(UUID.randomUUID().toString())
                                 .originalFileName(validFile2.getOriginalFilename())
@@ -311,11 +313,10 @@ class DocumentUploadImplTest {
     void uploadDocuments_failure_allFilesFailStorageUpload() {
         // Arrange
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-        when(documentConfigProperties.getStorageFolder()).thenReturn("test-folder");
 
         MultipartFile[] files = {validFile1, validFile2};
 
-        when(cloudinaryService.uploadFile(any(MultipartFile.class), anyString(), anyString(), anyString()))
+        when(fileStorageService.handleSuccessfulFileUpload(any(MultipartFile.class), anyString(), any()))
                 .thenThrow(new RuntimeException("Cloudinary down"));
 
         DocumentCollection savedCollection = DocumentCollection.builder()
