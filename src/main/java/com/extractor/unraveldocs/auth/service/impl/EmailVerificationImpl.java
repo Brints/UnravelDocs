@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +39,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
 
         // Check if the user already has an active verification token
         UserVerification userVerification = user.getUserVerification();
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         if (userVerification.getEmailVerificationToken() != null) {
             String timeLeft = dateHelper.getTimeLeftToExpiry(now, userVerification.getEmailVerificationTokenExpiry(),
                     "hour");
@@ -48,7 +48,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
         }
 
         String emailVerificationToken = verificationToken.generateVerificationToken();
-        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now, "hour", 3);
+        OffsetDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now, "hour", 3);
 
         userVerification.setEmailVerificationToken(emailVerificationToken);
         userVerification.setEmailVerificationTokenExpiry(emailVerificationTokenExpiry);
@@ -82,7 +82,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
             throw new BadRequestException("Invalid email verification token.");
         }
 
-        if (userVerification.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (userVerification.getEmailVerificationTokenExpiry().isBefore(OffsetDateTime.now())) {
             userVerification.setStatus(VerifiedStatus.EXPIRED);
             userRepository.save(user);
             throw new BadRequestException("Email verification token has expired.");

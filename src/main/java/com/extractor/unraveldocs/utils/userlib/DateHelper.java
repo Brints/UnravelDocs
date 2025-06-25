@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @Component
 public class DateHelper {
 
-    public LocalDateTime setExpiryDate(LocalDateTime now, String format, int setTime) {
+    public OffsetDateTime setExpiryDate(OffsetDateTime now, String format, int setTime) {
         return switch (format.toLowerCase()) {
             case "minute" -> now.plusMinutes(setTime);
             case "hour" -> now.plusHours(setTime);
@@ -20,7 +20,7 @@ public class DateHelper {
         };
     }
 
-    public String getTimeLeftToExpiry(LocalDateTime now, LocalDateTime expiryDate, String format) {
+    public String getTimeLeftToExpiry(OffsetDateTime now, OffsetDateTime expiryDate, String format) {
         if (expiryDate == null) {
             throw new BadRequestException("Expiry date cannot be null");
         }

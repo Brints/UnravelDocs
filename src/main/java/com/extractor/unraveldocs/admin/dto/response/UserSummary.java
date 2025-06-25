@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * Represents a summary of user information for administrative purposes.
@@ -23,7 +23,7 @@ public class UserSummary {
     private Role role;
     private boolean isActive;
     private boolean isVerified;
-    private LocalDateTime lastLogin;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private OffsetDateTime lastLogin;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 }

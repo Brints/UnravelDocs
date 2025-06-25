@@ -21,7 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,9 +71,9 @@ class GetAllUsersImplTest {
         user.setRole(Role.USER);
         user.setActive(true);
         user.setVerified(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        user.setLastLogin(LocalDateTime.now());
+        user.setCreatedAt(OffsetDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
+        user.setLastLogin(OffsetDateTime.now());
         user.setProfilePicture("profile.jpg");
 
         List<User> userList = Collections.singletonList(user);
@@ -132,7 +132,7 @@ class GetAllUsersImplTest {
             UserListData actualListData = invocation.getArgument(0);
             // Perform detailed assertions on UserListData if necessary
             assertEquals(1, actualListData.getUsers().size());
-            assertEquals(user.getId(), actualListData.getUsers().get(0).getId());
+            assertEquals(user.getId(), actualListData.getUsers().getFirst().getId());
             return expectedResponse; // Return the pre-configured expectedResponse
         });
 
@@ -143,7 +143,7 @@ class GetAllUsersImplTest {
         assertEquals(expectedResponse.getMessage(), actualResponse.getMessage());
         assertNotNull(actualResponse.getData());
         assertEquals(1, actualResponse.getData().getUsers().size());
-        assertEquals(user.getFirstName(), actualResponse.getData().getUsers().get(0).getFirstName());
+        assertEquals(user.getFirstName(), actualResponse.getData().getUsers().getFirst().getFirstName());
         assertEquals(userPage.getTotalElements(), actualResponse.getData().getTotalUsers());
         assertEquals(userPage.getTotalPages(), actualResponse.getData().getTotalPages());
         assertEquals(userPage.getNumber(), actualResponse.getData().getCurrentPage());

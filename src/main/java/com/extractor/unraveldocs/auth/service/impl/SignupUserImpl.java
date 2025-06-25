@@ -24,7 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @Service
@@ -54,8 +54,8 @@ public class SignupUserImpl implements SignupUserService {
         String encryptedPassword = passwordEncoder.encode(request.password());
         String emailVerificationToken = verificationToken.generateVerificationToken();
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now,"hour", 3);
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime emailVerificationTokenExpiry = dateHelper.setExpiryDate(now,"hour", 3);
 
         boolean noSuperAdmin = userRepository.superAdminExists();
         Role role = noSuperAdmin ? Role.SUPER_ADMIN : Role.USER;

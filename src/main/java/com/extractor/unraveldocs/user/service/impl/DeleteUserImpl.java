@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
@@ -32,7 +32,7 @@ public class DeleteUserImpl implements DeleteUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
+        OffsetDateTime deletionDate = OffsetDateTime.now().plusDays(10);
         user.setDeletedAt(deletionDate);
 
         if (user.getUserVerification() != null) {
@@ -50,12 +50,12 @@ public class DeleteUserImpl implements DeleteUserService {
     @Scheduled(cron = "0 0 0 * * ?")
     public void checkAndScheduleInactiveUsers() {
         log.info("Checking for inactive users to schedule deletion...");
-        LocalDateTime threshold = LocalDateTime.now().minusMonths(12);
+        OffsetDateTime threshold = OffsetDateTime.now().minusMonths(12);
 
         List<User> inactiveUsers = userRepository.findAllByLastLoginDateBefore(threshold);
 
         for (User user : inactiveUsers) {
-            LocalDateTime deletionDate = LocalDateTime.now().plusDays(10);
+            OffsetDateTime deletionDate = OffsetDateTime.now().plusDays(10);
             user.setActive(false);
             user.setDeletedAt(deletionDate);
 
@@ -79,7 +79,7 @@ public class DeleteUserImpl implements DeleteUserService {
     )
     public void processScheduledDeletions() {
         log.info("Processing scheduled deletions...");
-        LocalDateTime threshold = LocalDateTime.now();
+        OffsetDateTime threshold = OffsetDateTime.now();
 
         List<User> usersToDelete = userRepository.findAllByDeletedAtBefore(threshold);
 
