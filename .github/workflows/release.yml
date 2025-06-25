@@ -36,7 +36,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
@@ -44,13 +44,10 @@ jobs:
       - name: Determine bump type and current version
         id: version_info
         run: |
-          # For 'push' trigger, inputs.bump_type is null, so default to 'patch'
-          # For 'workflow_dispatch', github.event.inputs.bump_type will be set
           BUMP_TYPE="${{ github.event.inputs.bump_type || 'patch' }}"
           echo "BUMP_TYPE=${BUMP_TYPE}" >> $GITHUB_ENV
 
           CURRENT_VERSION_FULL=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          # Remove -SNAPSHOT suffix for version calculation
           CURRENT_VERSION_CLEAN=$(echo "$CURRENT_VERSION_FULL" | sed 's/-SNAPSHOT//')
           echo "CURRENT_VERSION_CLEAN=${CURRENT_VERSION_CLEAN}" >> $GITHUB_ENV
 
@@ -64,8 +61,6 @@ jobs:
           CURRENT_VERSION_CLEAN: ${{ env.CURRENT_VERSION_CLEAN }}
         run: |
           set -e
-
-          # Parse MAJOR.MINOR.PATCH from CURRENT_VERSION_CLEAN
           IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION_CLEAN"
           MAJOR=${VERSION_PARTS[0]}
           MINOR=${VERSION_PARTS[1]}
@@ -90,7 +85,6 @@ jobs:
           elif [ "$BUMP_TYPE" == "patch" ]; then
             PATCH=$((PATCH + 1))
           else
-            # Should not happen due to choice input and default, but as a fallback:
             echo "Warning: Invalid BUMP_TYPE '$BUMP_TYPE'. Defaulting to patch bump."
             PATCH=$((PATCH + 1))
           fi

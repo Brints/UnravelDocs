@@ -3,7 +3,7 @@ package com.extractor.unraveldocs.auth.dto;
 import com.extractor.unraveldocs.auth.enums.Role;
 import lombok.Builder;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Builder
 public record LoginData(
@@ -12,12 +12,12 @@ public record LoginData(
         String lastName,
         String email,
         Role role,
-        LocalDateTime lastLogin,
+        OffsetDateTime lastLogin,
         boolean isActive,
         boolean isVerified,
         String accessToken,
         String refreshToken,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt
 ) {
 }

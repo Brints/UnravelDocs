@@ -25,7 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
+
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -59,11 +60,11 @@ class SignupUserImplTest {
     private SignupUserImpl signupUserService;
 
     private SignUpRequestDto request;
-    private LocalDateTime expiryDate;
+    private OffsetDateTime expiryDate;
 
     @BeforeEach
     void setUp() {
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         expiryDate = now.plusHours(3);
 
         request = new SignUpRequestDto(
@@ -101,8 +102,8 @@ class SignupUserImplTest {
         when(userLibrary.capitalizeFirstLetterOfName("doe")).thenReturn("Doe");
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
+        when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
@@ -136,7 +137,7 @@ class SignupUserImplTest {
         verify(userLibrary).capitalizeFirstLetterOfName("doe");
         verify(passwordEncoder).encode("P@ssw0rd123");
         verify(verificationToken).generateVerificationToken();
-        verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
+        verify(dateHelper).setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3));
         verify(templatesService).sendVerificationEmail(
                 eq("john.doe@example.com"), eq("John"), eq("Doe"), eq("verificationToken"), eq("3"));
         verify(userRepository).save(any(User.class));
@@ -170,8 +171,8 @@ class SignupUserImplTest {
         when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
+        when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
@@ -234,8 +235,8 @@ class SignupUserImplTest {
         when(userLibrary.capitalizeFirstLetterOfName(anyString())).thenReturn("John");
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(verificationToken.generateVerificationToken()).thenReturn("verificationToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), any(LocalDateTime.class), eq("hour"))).thenReturn("3");
+        when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);

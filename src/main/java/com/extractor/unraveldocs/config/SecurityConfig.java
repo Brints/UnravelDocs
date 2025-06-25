@@ -1,6 +1,5 @@
 package com.extractor.unraveldocs.config;
 
-import com.extractor.unraveldocs.auth.service.CustomUserDetailsService;
 import com.extractor.unraveldocs.security.*;
 import com.extractor.unraveldocs.utils.CustomPermissionEvaluator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,19 +30,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Getter
     private final ObjectMapper objectMapper;
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(
-            JwtTokenProvider jwtTokenProvider,
-            CustomUserDetailsService userDetailsService,
-            ObjectMapper objectMapper,
-            TokenBlacklistService tokenBlacklistService
-    ) {
-        return new JwtAuthenticationFilter(jwtTokenProvider, objectMapper, tokenBlacklistService, userDetailsService);
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -77,7 +68,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter,
             CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors

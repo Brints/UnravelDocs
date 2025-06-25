@@ -23,7 +23,7 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,8 +72,8 @@ public class LoginUserImplTest {
         user.setRole(Role.USER);
         user.setFirstName("John");
         user.setLastName("Doe");
-        user.setCreatedAt(LocalDateTime.now().minusDays(1));
-        user.setUpdatedAt(LocalDateTime.now().minusHours(1));
+        user.setCreatedAt(OffsetDateTime.now().minusDays(1));
+        user.setUpdatedAt(OffsetDateTime.now().minusHours(1));
         user.setLastLogin(null);
 
 

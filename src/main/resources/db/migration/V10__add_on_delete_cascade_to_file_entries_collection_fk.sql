@@ -1,6 +1,3 @@
--- V10__add_on_delete_cascade_to_file_entries_collection_fk.sql
-
--- Drop the existing foreign key constraint
 ALTER TABLE document_file_entries
 DROP CONSTRAINT fk_file_entry_collection;
 

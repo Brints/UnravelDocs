@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,12 +51,12 @@ class EmailVerificationImplTest {
     private ResendEmailVerificationDto resendRequest;
     private User user;
     private UserVerification userVerification;
-    private LocalDateTime now;
-    private LocalDateTime expiryDate;
+    private OffsetDateTime now;
+    private OffsetDateTime expiryDate;
 
     @BeforeEach
     void setUp() {
-        now = LocalDateTime.now();
+        now = OffsetDateTime.now();
         expiryDate = now.plusHours(3);
 
         resendRequest = new ResendEmailVerificationDto("john.doe@example.com");
@@ -107,7 +107,7 @@ class EmailVerificationImplTest {
         userVerification.setEmailVerificationToken("existingToken");
         userVerification.setEmailVerificationTokenExpiry(expiryDate);
         when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(user));
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), eq(expiryDate), eq("hour"))).thenReturn("2");
+        when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), eq(expiryDate), eq("hour"))).thenReturn("2");
 
         // Act & Assert
         BadRequestException exception = assertThrows(BadRequestException.class,
@@ -115,7 +115,7 @@ class EmailVerificationImplTest {
                 "A verification email has already been sent. Token expires in: 2");
         assertEquals("A verification email has already been sent. Token expires in: 2", exception.getMessage());
         verify(userRepository).findByEmail("john.doe@example.com");
-        verify(dateHelper).getTimeLeftToExpiry(any(LocalDateTime.class), eq(expiryDate), eq("hour"));
+        verify(dateHelper).getTimeLeftToExpiry(any(OffsetDateTime.class), eq(expiryDate), eq("hour"));
         verifyNoMoreInteractions(userRepository, dateHelper);
         verifyNoInteractions(verificationToken, templatesService, responseBuilder);
     }
@@ -125,8 +125,8 @@ class EmailVerificationImplTest {
         // Arrange
         when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(user));
         when(verificationToken.generateVerificationToken()).thenReturn("newToken");
-        when(dateHelper.setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
-        when(dateHelper.getTimeLeftToExpiry(any(LocalDateTime.class), eq(expiryDate), eq("hour"))).thenReturn("3");
+        when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
+        when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), eq(expiryDate), eq("hour"))).thenReturn("3");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(responseBuilder.buildUserResponse(
                 isNull(), eq(HttpStatus.OK), eq("Verification email sent successfully.")
@@ -143,8 +143,8 @@ class EmailVerificationImplTest {
         assertNull(response.getData());
         verify(userRepository).findByEmail("john.doe@example.com");
         verify(verificationToken).generateVerificationToken();
-        verify(dateHelper).setExpiryDate(any(LocalDateTime.class), eq("hour"), eq(3));
-        verify(dateHelper).getTimeLeftToExpiry(any(LocalDateTime.class), eq(expiryDate), eq("hour"));
+        verify(dateHelper).setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3));
+        verify(dateHelper).getTimeLeftToExpiry(any(OffsetDateTime.class), eq(expiryDate), eq("hour"));
         verify(userRepository).save(argThat(u -> {
             UserVerification uv = u.getUserVerification();
             return uv.getEmailVerificationToken().equals("newToken") &&
@@ -206,7 +206,7 @@ class EmailVerificationImplTest {
     @Test
     void verifyEmail_ExpiredToken_ThrowsBadRequestException() {
         // Arrange
-        LocalDateTime expiredDate = now.minusHours(1);
+        OffsetDateTime expiredDate = now.minusHours(1);
         userVerification.setEmailVerificationToken("validToken");
         userVerification.setEmailVerificationTokenExpiry(expiredDate);
         when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(user));

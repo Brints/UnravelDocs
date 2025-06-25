@@ -21,7 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -76,7 +76,7 @@ public class LoginUserImpl implements LoginUserService {
             throw new TokenProcessingException("Error processing refresh token.");
         }
 
-        authenticatedUser.setLastLogin(LocalDateTime.now());
+        authenticatedUser.setLastLogin(OffsetDateTime.now());
         userRepository.save(authenticatedUser);
 
         LoginData data = LoginData.builder()

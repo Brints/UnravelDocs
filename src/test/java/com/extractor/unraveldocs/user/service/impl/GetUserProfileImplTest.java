@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,11 +50,11 @@ class GetUserProfileImplTest {
         u.setFirstName("John");
         u.setLastName("Doe");
         u.setEmail(userEmail);
-        u.setLastLogin(LocalDateTime.now());
+        u.setLastLogin(OffsetDateTime.now());
         u.setRole(Role.USER);
         u.setVerified(true);
-        u.setCreatedAt(LocalDateTime.now().minusDays(1));
-        u.setUpdatedAt(LocalDateTime.now());
+        u.setCreatedAt(OffsetDateTime.now().minusDays(1));
+        u.setUpdatedAt(OffsetDateTime.now());
         return u;
     }
 

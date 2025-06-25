@@ -23,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,7 +99,7 @@ class PasswordResetImplTest {
         // Arrange
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
         when(generateVerificationToken.generateVerificationToken()).thenReturn("generated-token");
-        when(dateHelper.setExpiryDate(any(), anyString(), anyInt())).thenReturn(LocalDateTime.now().plusHours(1));
+        when(dateHelper.setExpiryDate(any(), anyString(), anyInt())).thenReturn(OffsetDateTime.now().plusHours(1));
         when(dateHelper.getTimeLeftToExpiry(any(), any(), anyString())).thenReturn("1 hour");
         when(responseBuilder.buildUserResponse(
                 any(), any(), anyString()
@@ -140,7 +140,7 @@ class PasswordResetImplTest {
     void forgotPassword_WithExistingActiveToken_ShouldThrowBadRequestException() {
         // Arrange
         userVerification.setPasswordResetToken("existing-token");
-        userVerification.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
+        userVerification.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(1));
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
 
         // Act & Assert
@@ -154,7 +154,7 @@ class PasswordResetImplTest {
     void resetPassword_WithValidToken_ShouldResetPassword() {
         // Arrange
         userVerification.setPasswordResetToken("valid-token");
-        userVerification.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
+        userVerification.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(1));
         user.setPassword("oldEncodedPassword"); // Set a password for the user
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
         when(passwordEncoder.matches(resetPasswordDto.newPassword(), user.getPassword())).thenReturn(false);
@@ -214,7 +214,7 @@ class PasswordResetImplTest {
     void resetPassword_WithExpiredToken_ShouldThrowBadRequestException() {
         // Arrange
         userVerification.setPasswordResetToken("valid-token");
-        userVerification.setPasswordResetTokenExpiry(LocalDateTime.now().minusHours(1));
+        userVerification.setPasswordResetTokenExpiry(OffsetDateTime.now().minusHours(1));
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
 
         // Act & Assert
@@ -229,7 +229,7 @@ class PasswordResetImplTest {
     void resetPassword_WithSameAsOldPassword_ShouldThrowBadRequestException() {
         // Arrange
         userVerification.setPasswordResetToken("valid-token");
-        userVerification.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
+        userVerification.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(1));
         user.setPassword("oldEncodedPassword"); // Set a password for the user
         when(userRepository.findByEmail(anyString())).thenReturn(java.util.Optional.of(user));
         when(passwordEncoder.matches(resetPasswordDto.newPassword(), user.getPassword())).thenReturn(true);

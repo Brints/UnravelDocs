@@ -2,7 +2,7 @@ package com.extractor.unraveldocs.global.request;
 
 import com.extractor.unraveldocs.auth.enums.Role;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public interface UserDataProjection {
     void setId(String id);
@@ -10,9 +10,9 @@ public interface UserDataProjection {
     void setFirstName(String firstName);
     void setLastName(String lastName);
     void setEmail(String email);
-    void setLastLogin(LocalDateTime lastLogin);
+    void setLastLogin(OffsetDateTime lastLogin);
     void setRole(Role role);
     void setVerified(boolean verified);
-    void setCreatedAt(LocalDateTime createdAt);
-    void setUpdatedAt(LocalDateTime updatedAt);
+    void setCreatedAt(OffsetDateTime createdAt);
+    void setUpdatedAt(OffsetDateTime updatedAt);
 }

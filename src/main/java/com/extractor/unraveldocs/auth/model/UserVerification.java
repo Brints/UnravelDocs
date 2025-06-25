@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @Entity
@@ -36,16 +36,16 @@ public class UserVerification {
     private VerifiedStatus status = VerifiedStatus.PENDING;
 
     @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime emailVerificationTokenExpiry;
+    private OffsetDateTime emailVerificationTokenExpiry;
 
     @Column
     private String passwordResetToken;
 
     @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime passwordResetTokenExpiry;
+    private OffsetDateTime passwordResetTokenExpiry;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    private OffsetDateTime deletedAt;
 
     @CreationTimestamp
     @Column(
@@ -53,12 +53,12 @@ public class UserVerification {
             updatable = false,
             name = "created_at"
     )
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(
             nullable = false,
             name = "updated_at"
     )
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 }

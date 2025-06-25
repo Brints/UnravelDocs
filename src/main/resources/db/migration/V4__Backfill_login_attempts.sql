@@ -1,5 +1,3 @@
--- Flyway migration script to backfill login_attempts table
--- This script populates the login_attempts table with default values for existing users
 INSERT INTO login_attempts (id, user_id, login_attempts, is_blocked, blocked_until, created_at, updated_at)
 SELECT
     gen_random_uuid() AS id,
@@ -17,21 +15,3 @@ WHERE
         FROM login_attempts la
         WHERE la.user_id = u.id
     );
--- Ensure that the login_attempts table is populated for all existing users
--- This will ensure that all users have a corresponding entry in the login_attempts table
--- and that the application can function correctly without any missing data.
--- This migration is necessary to ensure that the login_attempts table is properly populated
--- for all existing users, especially after the introduction of the login_attempts table in the previous migration.
--- This migration script is essential for maintaining data integrity and ensuring that the application
--- INSERT INTO login_attempts (id, user_id, login_attempts, is_blocked, blocked_until, created_at, updated_at)
--- SELECT
---     gen_random_uuid(), -- or uuid_generate_v4() depending on your DB
---     u.id,
---     0,
---     FALSE,
---     NULL,
---     NOW(),
---     NOW()
--- FROM users u
---          LEFT JOIN login_attempts la ON la.user_id = u.id
--- WHERE la.user_id IS NULL;

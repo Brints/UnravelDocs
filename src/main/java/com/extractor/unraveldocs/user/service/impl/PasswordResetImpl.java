@@ -21,7 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +49,7 @@ public class PasswordResetImpl implements PasswordResetService {
         }
 
         // Current time
-        LocalDateTime currentTime = LocalDateTime.now();
+        OffsetDateTime currentTime = OffsetDateTime.now();
 
         if (
                 userVerification.getPasswordResetTokenExpiry() != null &&
@@ -61,7 +61,7 @@ public class PasswordResetImpl implements PasswordResetService {
         }
 
         String token = generateVerificationToken.generateVerificationToken();
-        LocalDateTime expiryTime = dateHelper.setExpiryDate(currentTime,"hour", 1);
+        OffsetDateTime expiryTime = dateHelper.setExpiryDate(currentTime,"hour", 1);
 
         userVerification.setPasswordResetToken(token);
         userVerification.setPasswordResetTokenExpiry(expiryTime);
@@ -102,7 +102,7 @@ public class PasswordResetImpl implements PasswordResetService {
             throw new BadRequestException("Invalid password reset token.");
         }
 
-        if (userVerification.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (userVerification.getPasswordResetTokenExpiry().isBefore(OffsetDateTime.now())) {
             userVerification.setStatus(VerifiedStatus.EXPIRED);
             userRepository.save(user);
             throw new BadRequestException("Password reset token has expired.");
@@ -114,7 +114,6 @@ public class PasswordResetImpl implements PasswordResetService {
             throw new BadRequestException("New password cannot be the same as the old password.");
         }
 
-        // Update password logic (implementation not shown)
         String encodedPassword = passwordEncoder.encode(request.newPassword());
         user.setPassword(encodedPassword);
         userVerification.setPasswordResetToken(null);

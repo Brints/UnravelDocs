@@ -14,7 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -45,7 +45,7 @@ public class User implements UserDetails {
     private String password;
 
     @Column(name = "last_login", columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastLogin;
+    private OffsetDateTime lastLogin;
 
     @Column(nullable = false, name = "is_active")
     private boolean isActive = false;
@@ -58,7 +58,7 @@ public class User implements UserDetails {
     private Role role = Role.USER;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    private OffsetDateTime deletedAt;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private LoginAttempts loginAttempts;
@@ -71,11 +71,11 @@ public class User implements UserDetails {
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(nullable = false, name = "updated_at")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
