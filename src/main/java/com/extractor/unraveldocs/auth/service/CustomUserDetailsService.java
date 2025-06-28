@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.auth.service;
 
+import com.extractor.unraveldocs.auth.interfaces.UserEntityById;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService, UserEntityById {
     private final UserRepository userRepository;
 
     @Override
@@ -21,6 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
     }
 
+    @Override
     public User loadUserEntityById(String userId) {
         return userRepository.findUserById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
