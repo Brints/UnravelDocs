@@ -42,9 +42,11 @@ public class FileEntry {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private OffsetDateTime createdAt;
+    @Builder.Default
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    @Builder.Default
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 }
