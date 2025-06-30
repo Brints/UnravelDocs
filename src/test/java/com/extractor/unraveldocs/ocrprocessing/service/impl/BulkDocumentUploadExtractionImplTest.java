@@ -16,14 +16,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,9 +51,6 @@ class BulkDocumentUploadExtractionImplTest {
     @InjectMocks
     private BulkDocumentUploadExtractionImpl bulkDocumentUploadExtractionService;
 
-    @Captor
-    private ArgumentCaptor<TransactionSynchronization> synchronizationCaptor;
-
     private User user;
 
     @BeforeEach
@@ -86,8 +80,8 @@ class BulkDocumentUploadExtractionImplTest {
         FileEntry fileEntry1 = FileEntry.builder().documentId(UUID.randomUUID().toString()).fileUrl("url1").uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
         FileEntry fileEntry2 = FileEntry.builder().documentId(UUID.randomUUID().toString()).fileUrl("url2").uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
 
-        when(fileStorageService.handleSuccessfulFileUpload(eq(file1), anyString(), any())).thenReturn(fileEntry1);
-        when(fileStorageService.handleSuccessfulFileUpload(eq(file2), anyString(), any())).thenReturn(fileEntry2);
+        when(fileStorageService.handleSuccessfulFileUpload(eq(file1), anyString())).thenReturn(fileEntry1);
+        when(fileStorageService.handleSuccessfulFileUpload(eq(file2), anyString())).thenReturn(fileEntry2);
 
         DocumentCollection savedCollection = new DocumentCollection();
         savedCollection.setId(UUID.randomUUID().toString());
@@ -128,8 +122,8 @@ class BulkDocumentUploadExtractionImplTest {
         when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("application/pdf"));
 
         FileEntry successFileEntry = FileEntry.builder().documentId(UUID.randomUUID().toString()).fileUrl("url_success").uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
-        when(fileStorageService.handleSuccessfulFileUpload(eq(successFile), anyString(), any())).thenReturn(successFileEntry);
-        when(fileStorageService.handleSuccessfulFileUpload(eq(storageFailFile), anyString(), any())).thenThrow(new RuntimeException("Storage unavailable"));
+        when(fileStorageService.handleSuccessfulFileUpload(eq(successFile), anyString())).thenReturn(successFileEntry);
+        when(fileStorageService.handleSuccessfulFileUpload(eq(storageFailFile), anyString())).thenThrow(new RuntimeException("Storage unavailable"));
 
         DocumentCollection savedCollection = new DocumentCollection();
         savedCollection.setId(UUID.randomUUID().toString());
@@ -148,9 +142,9 @@ class BulkDocumentUploadExtractionImplTest {
         assertEquals(3, response.getData().getFiles().size());
 
         // Check statuses
-        assertTrue(response.getData().getFiles().stream().anyMatch(f -> f.getStatus().equals(DocumentUploadState.SUCCESS.toString())));
-        assertTrue(response.getData().getFiles().stream().anyMatch(f -> f.getStatus().equals(DocumentUploadState.FAILED_VALIDATION.toString())));
-        assertTrue(response.getData().getFiles().stream().anyMatch(f -> f.getStatus().equals(DocumentUploadState.FAILED_STORAGE.toString())));
+        assertTrue(response.getData().getFiles().stream().anyMatch(f -> DocumentUploadState.SUCCESS.toString().equals(f.getStatus()) && f.getOriginalFileName().equals("success.pdf")));
+        assertTrue(response.getData().getFiles().stream().anyMatch(f -> DocumentUploadState.FAILED_VALIDATION.toString().equals(f.getStatus()) && f.getOriginalFileName().equals("fail.txt")));
+        assertTrue(response.getData().getFiles().stream().anyMatch(f -> DocumentUploadState.FAILED_STORAGE_UPLOAD.toString().equals(f.getStatus()) && f.getOriginalFileName().equals("storage_fail.pdf")));
 
         verify(documentCollectionRepository, times(1)).save(any(DocumentCollection.class));
         verify(ocrDataRepository, times(1)).saveAll(anyList());
@@ -180,7 +174,7 @@ class BulkDocumentUploadExtractionImplTest {
 
         verify(documentCollectionRepository, never()).save(any());
         verify(ocrDataRepository, never()).saveAll(any());
-        verify(fileStorageService, never()).handleSuccessfulFileUpload(any(), any(), any());
+        verify(fileStorageService, never()).handleSuccessfulFileUpload(any(), any());
         verify(rabbitTemplate, never()).convertAndSend(anyString(), anyString(), any(Object.class));
     }
 }

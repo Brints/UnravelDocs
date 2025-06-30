@@ -25,6 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class DownloadOcrCResultController {
     private final DownloadOcrResultService downloadOcrResultService;
 
+    /**
+     * Generates and streams a DOCX file containing the extracted text of a specific document.
+     * The response headers are set to trigger a file download dialog in the browser.
+     *
+     * @param collectionId The ID of the document's collection.
+     * @param documentId   The ID of the document whose OCR text is to be downloaded.
+     * @param user         The currently authenticated user, injected by Spring Security.
+     * @return A {@link ResponseEntity} containing the {@link InputStreamResource} of the DOCX file.
+     */
     @GetMapping(value = "/docx", produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     @Operation(summary = "Download extracted Text as DOCX file",
                description = "Generates and downloads the OCR result of a document in DOCX format.")

@@ -99,9 +99,9 @@ class DocumentUploadImplTest {
                 .originalFileName(validFile2.getOriginalFilename()).fileUrl(file2Url).storageId(file2StorageId)
                 .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
 
-        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename())))
                 .thenReturn(fileEntry1);
-        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename()), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename())))
                 .thenReturn(fileEntry2);
 
         DocumentCollection savedCollection = DocumentCollection.builder()
@@ -156,7 +156,7 @@ class DocumentUploadImplTest {
                 .originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId)
                 .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
 
-        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename())))
                 .thenReturn(fileEntry1);
 
         DocumentCollection savedCollection = DocumentCollection.builder()
@@ -217,9 +217,9 @@ class DocumentUploadImplTest {
                 .originalFileName(validFile1.getOriginalFilename()).fileUrl(file1Url).storageId(file1StorageId)
                 .uploadStatus(DocumentUploadState.SUCCESS.toString()).build();
 
-        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename()), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile1), eq(validFile1.getOriginalFilename())))
                 .thenReturn(fileEntry1);
-        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename()), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(eq(validFile2), eq(validFile2.getOriginalFilename())))
                 .thenThrow(new RuntimeException("Cloudinary down"));
 
 
@@ -263,11 +263,10 @@ class DocumentUploadImplTest {
         FileEntryData failedData = response
                 .getData()
                 .getFiles().stream()
-                .filter(f -> DocumentUploadState.FAILED_STORAGE.toString()
+                .filter(f -> DocumentUploadState.FAILED_STORAGE_UPLOAD.toString()
                         .equals(f.getStatus())).findFirst().orElse(null);
         assertNotNull(failedData);
         assertEquals(validFile2.getOriginalFilename(), failedData.getOriginalFileName());
-        assertNotNull(failedData.getDocumentId());
 
         ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
         verify(documentCollectionRepository).save(collectionCaptor.capture());
@@ -316,7 +315,7 @@ class DocumentUploadImplTest {
 
         MultipartFile[] files = {validFile1, validFile2};
 
-        when(fileStorageService.handleSuccessfulFileUpload(any(MultipartFile.class), anyString(), any()))
+        when(fileStorageService.handleSuccessfulFileUpload(any(MultipartFile.class), anyString()))
                 .thenThrow(new RuntimeException("Cloudinary down"));
 
         DocumentCollection savedCollection = DocumentCollection.builder()
@@ -343,7 +342,7 @@ class DocumentUploadImplTest {
         assertTrue(response
                 .getData()
                 .getFiles().stream()
-                .allMatch(f -> DocumentUploadState.FAILED_STORAGE.toString().equals(f.getStatus())));
+                .allMatch(f -> DocumentUploadState.FAILED_STORAGE_UPLOAD.toString().equals(f.getStatus())));
 
         ArgumentCaptor<DocumentCollection> collectionCaptor = ArgumentCaptor.forClass(DocumentCollection.class);
         verify(documentCollectionRepository).save(collectionCaptor.capture());

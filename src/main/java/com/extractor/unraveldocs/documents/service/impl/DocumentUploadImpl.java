@@ -53,10 +53,6 @@ public class DocumentUploadImpl implements DocumentUploadService {
 
         for (MultipartFile file : files) {
             String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "unnamed_file");
-            FileEntry.FileEntryBuilder fileEntryBuilder = FileEntry.builder()
-                    .originalFileName(originalFilename)
-                    .fileType(file.getContentType())
-                    .fileSize(file.getSize());
 
             FileEntryData.FileEntryDataBuilder fileEntryDataBuilder = FileEntryData.builder()
                     .originalFileName(originalFilename)
@@ -67,7 +63,7 @@ public class DocumentUploadImpl implements DocumentUploadService {
 
                 try {
                     FileEntry fileEntry = fileStorageService
-                            .handleSuccessfulFileUpload(file, originalFilename, fileEntryBuilder);
+                            .handleSuccessfulFileUpload(file, originalFilename);
 
                     processedFileEntries.add(fileEntry);
 
@@ -81,9 +77,8 @@ public class DocumentUploadImpl implements DocumentUploadService {
                                     processedFileEntries,
                                     storageFailures,
                                     originalFilename,
-                                    fileEntryBuilder,
-                                    fileEntryDataBuilder,
                                     storageEx, log, s);
+                    fileEntryDataBuilder.status(DocumentUploadState.FAILED_STORAGE_UPLOAD.toString());
                 }
             } catch (BadRequestException | IllegalArgumentException validationEx) {
                 log.warn("Validation failed for file {}: {}",
@@ -158,7 +153,7 @@ public class DocumentUploadImpl implements DocumentUploadService {
             } else if (totalFiles > 0) {
                 apiResponseMessage =
                         String.format("No documents were successfully uploaded. %d failed validation. %d failed storage. Check individual statuses.",
-                        validationFailures, storageFailures);
+                                validationFailures, storageFailures);
             } else {
                 apiResponseMessage = "No files provided for upload.";
             }

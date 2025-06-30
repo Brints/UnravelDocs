@@ -62,10 +62,6 @@ public class BulkDocumentUploadExtractionImpl implements BulkDocumentUploadExtra
 
         for (MultipartFile file : files) {
             String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "unnamed_file");
-            FileEntry.FileEntryBuilder fileEntryBuilder = FileEntry.builder()
-                    .originalFileName(originalFilename)
-                    .fileType(file.getContentType())
-                    .fileSize(file.getSize());
 
             FileEntryData.FileEntryDataBuilder fileEntryDataBuilder = FileEntryData.builder()
                     .originalFileName(originalFilename)
@@ -75,10 +71,9 @@ public class BulkDocumentUploadExtractionImpl implements BulkDocumentUploadExtra
                 validateFile(file);
 
                 try {
-                    FileEntry fileEntry = fileStorageService.handleSuccessfulFileUpload(
-                            file,
-                            originalFilename,
-                            fileEntryBuilder);
+                    FileEntry fileEntry = fileStorageService
+                            .handleSuccessfulFileUpload(file, originalFilename);
+
                     processedFiles.add(fileEntry);
 
                     OcrData ocrData = new OcrData();
@@ -95,12 +90,11 @@ public class BulkDocumentUploadExtractionImpl implements BulkDocumentUploadExtra
                             getStorageFailures(
                                     processedFiles,
                                     storageFailures,
-                                    originalFilename,
-                                    fileEntryBuilder,
-                                    fileEntryDataBuilder, e, log, s);
+                                    originalFilename, e, log, s);
                     log.warn("File {} failed to upload to storage: {}",
                             s.sanitizeLogging(originalFilename),
                             s.sanitizeLogging(e.getMessage()));
+                    fileEntryDataBuilder.status(DocumentUploadState.FAILED_STORAGE_UPLOAD.toString());
                 }
             } catch (BadRequestException | IllegalArgumentException validationEx) {
                 log.warn("Validation failed for file {}: {}",
