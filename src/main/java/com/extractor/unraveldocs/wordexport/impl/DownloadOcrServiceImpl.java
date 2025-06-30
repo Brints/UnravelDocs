@@ -18,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 
+/**
+ * Implementation of {@link DownloadOcrResultService}.
+ * This service orchestrates the validation, data retrieval, and file generation
+ * required to download a document's OCR text as a DOCX file.
+ */
 @Service
 @RequiredArgsConstructor
 public class DownloadOcrServiceImpl implements DownloadOcrResultService {
@@ -26,6 +31,15 @@ public class DownloadOcrServiceImpl implements DownloadOcrResultService {
     private final FindAndValidateFileEntry validateFileEntry;
     private final DocxExportService docxExportService;
 
+    /**
+     * {@inheritDoc}
+     * This implementation validates user access, checks OCR processing status,
+     * and then uses the {@link DocxExportService} to generate the file.
+     *
+     * @throws NotFoundException   if the document or its OCR data cannot be found.
+     * @throws BadRequestException if OCR processing is not complete or if there is no text to export.
+     * @throws ServiceException    if an error occurs during DOCX file generation.
+     */
     @Override
     @Transactional(readOnly = true)
     public DownloadableFile downloadAsDocx(String collectionId, String documentId, String userId) {
