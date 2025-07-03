@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.user.service.impl;
+package com.extractor.unraveldocs.user.impl;
 
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
 import com.extractor.unraveldocs.auth.model.UserVerification;

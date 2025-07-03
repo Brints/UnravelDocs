@@ -1,24 +1,26 @@
 package com.extractor.unraveldocs.documents.service.impl;
 
 import com.extractor.unraveldocs.auth.enums.Role;
-import com.extractor.unraveldocs.config.DocumentConfigProperties;
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionUploadData;
 import com.extractor.unraveldocs.documents.dto.response.FileEntryData;
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
 import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
+import com.extractor.unraveldocs.documents.impl.DocumentUploadImpl;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;
 import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
+import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.ocrprocessing.utils.FileStorageService;
 import com.extractor.unraveldocs.user.model.User;
+import com.extractor.unraveldocs.utils.imageupload.FileUploadValidationUtil;
+import com.extractor.unraveldocs.utils.imageupload.FileSize;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -48,9 +50,6 @@ class DocumentUploadImplTest {
     private FileStorageService fileStorageService;
 
     @Mock
-    private DocumentConfigProperties documentConfigProperties;
-
-    @Mock
     private SanitizeLogging s;
 
     @InjectMocks
@@ -61,6 +60,9 @@ class DocumentUploadImplTest {
     private MockMultipartFile validFile2;
     private MockMultipartFile invalidFileTypeFile;
     private MockMultipartFile emptyFile;
+
+    private MockedStatic<FileUploadValidationUtil> mockedValidationUtil;
+
 
     @BeforeEach
     void setUp() {
@@ -73,19 +75,33 @@ class DocumentUploadImplTest {
         testUser.setVerified(true);
         testUser.setActive(true);
 
-        validFile1 = new MockMultipartFile("files", "file1.png", "image/png", "file1 content".getBytes());
-        validFile2 = new MockMultipartFile("files", "file2.jpg", "image/jpeg", "file2 content".getBytes());
-        invalidFileTypeFile = new MockMultipartFile("files", "file3.txt", "text/plain", "file3 content".getBytes());
+        // Use minimal content to avoid triggering total size validation in unrelated tests
+        byte[] smallContent = "c".getBytes();
+        validFile1 = new MockMultipartFile("files", "file1.png", "image/png", smallContent);
+        validFile2 = new MockMultipartFile("files", "file2.jpg", "image/jpeg", smallContent);
+        invalidFileTypeFile = new MockMultipartFile("files", "file3.txt", "text/plain", smallContent);
         emptyFile = new MockMultipartFile("files", "empty.png", "image/png", new byte[0]);
 
         when(s.sanitizeLogging(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockedValidationUtil = mockStatic(FileUploadValidationUtil.class);
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateTotalFileSize(any(MultipartFile[].class))).then(invocation -> null);
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateIndividualFile(any(MultipartFile.class))).then(invocation -> null);
+
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateIndividualFile(eq(invalidFileTypeFile)))
+                .thenThrow(new BadRequestException("Invalid file type"));
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateIndividualFile(eq(emptyFile)))
+                .thenThrow(new BadRequestException("File is empty"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedValidationUtil.close();
     }
 
     @Test
     void uploadDocuments_success_allFilesUploaded() {
         // Arrange
-        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-
         MultipartFile[] files = {validFile1, validFile2};
         String file1Url = "https://cloudinary.com/file1.png";
         String file2Url = "https://cloudinary.com/file2.jpg";
@@ -146,8 +162,6 @@ class DocumentUploadImplTest {
     @Test
     void uploadDocuments_partialSuccess_oneFileFailsValidation() {
         // Arrange
-        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-
         MultipartFile[] files = {validFile1, invalidFileTypeFile};
         String file1Url = "https://cloudinary.com/file1.png";
         String file1StorageId = "storageId1";
@@ -207,8 +221,6 @@ class DocumentUploadImplTest {
     @Test
     void uploadDocuments_partialSuccess_oneFileFailsStorageUpload() {
         // Arrange
-        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-
         MultipartFile[] files = {validFile1, validFile2};
         String file1Url = "https://cloudinary.com/file1.png";
         String file1StorageId = "storageId1";
@@ -283,8 +295,6 @@ class DocumentUploadImplTest {
     @Test
     void uploadDocuments_failure_allFilesFailValidation() {
         // Arrange
-        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-
         MultipartFile[] files = {invalidFileTypeFile, emptyFile};
 
         // Act
@@ -311,8 +321,6 @@ class DocumentUploadImplTest {
     @Test
     void uploadDocuments_failure_allFilesFailStorageUpload() {
         // Arrange
-        when(documentConfigProperties.getAllowedFileTypes()).thenReturn(List.of("image/png", "image/jpeg"));
-
         MultipartFile[] files = {validFile1, validFile2};
 
         when(fileStorageService.handleSuccessfulFileUpload(any(MultipartFile.class), anyString()))
@@ -372,6 +380,48 @@ class DocumentUploadImplTest {
         assertNull(response.getData().getCollectionId());
         assertEquals(DocumentStatus.FAILED_UPLOAD, response.getData().getOverallStatus());
         assertEquals(Collections.emptyList(), response.getData().getFiles());
+
+        verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
+    }
+
+    @Test
+    void uploadDocuments_failure_totalFileSizeExceedsLimit() {
+        // Arrange
+        MultipartFile[] files = {validFile1};
+        String expectedMessage = FileSize.getFileSizeLimitMessage(true);
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateTotalFileSize(files))
+                .thenThrow(new BadRequestException(expectedMessage));
+
+        // Act & Assert
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> documentUploadService.uploadDocuments(files, testUser));
+
+        assertEquals(expectedMessage, exception.getMessage());
+        verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
+    }
+
+    @Test
+    void uploadDocuments_failure_individualFileSizeExceedsLimit() {
+        // Arrange
+        MultipartFile largeFile = new MockMultipartFile("files", "large.png", "image/png", "content".getBytes());
+        MultipartFile[] files = {largeFile};
+        mockedValidationUtil.when(() -> FileUploadValidationUtil.validateIndividualFile(largeFile))
+                .thenThrow(new BadRequestException("File size exceeds limit"));
+
+        // Act
+        DocumentCollectionResponse<DocumentCollectionUploadData> response = documentUploadService.uploadDocuments(files, testUser);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK.value(), response.getStatusCode());
+        assertEquals("failure", response.getStatus());
+        assertEquals("All 1 document(s) failed validation. No documents were uploaded.", response.getMessage());
+        assertNotNull(response.getData());
+        assertNull(response.getData().getCollectionId());
+        assertEquals(DocumentStatus.FAILED_UPLOAD, response.getData().getOverallStatus());
+        assertEquals(1, response.getData().getFiles().size());
+        FileEntryData failedData = response.getData().getFiles().getFirst();
+        assertEquals(DocumentUploadState.FAILED_VALIDATION.toString(), failedData.getStatus());
+        assertEquals(largeFile.getOriginalFilename(), failedData.getOriginalFileName());
 
         verify(documentCollectionRepository, never()).save(any(DocumentCollection.class));
     }

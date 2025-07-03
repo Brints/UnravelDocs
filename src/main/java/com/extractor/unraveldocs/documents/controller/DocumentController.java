@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class DocumentController {
             summary = "Upload one or more documents as a collection",
             description = "Allows users to upload multiple documents. These will be grouped as a single collection.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Successfully processed document upload request",
+                    @ApiResponse(responseCode = "202_OK", description = "Successfully processed document upload request",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = DocumentCollectionResponse.class))),
                     @ApiResponse(responseCode = "400", description = "Bad Request - No files provided or invalid file(s)"),
@@ -59,9 +60,9 @@ public class DocumentController {
     )
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentCollectionResponse<DocumentCollectionUploadData>> uploadDocuments(
-            @Parameter(description = "Files to be uploaded", required = true,
+            @Parameter(description = "Files to be uploaded and extracted", required = true,
                     content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-            @RequestParam("files") MultipartFile[] files,
+            @RequestParam("files") @NotNull MultipartFile[] files,
             Authentication authenticatedUser
     ) {
         User user = getAuthenticatedUser(authenticatedUser);
@@ -98,7 +99,7 @@ public class DocumentController {
                     @ApiResponse(responseCode = "404", description = "Not Found - Document collection not found")
             }
     )
-    @GetMapping("/{collectionId}")
+    @GetMapping("/collection/{collectionId}")
     public ResponseEntity<DocumentCollectionResponse<GetDocumentCollectionData>> getDocumentCollectionById(
             @Parameter(description = "ID of the document collection") @PathVariable String collectionId,
             Authentication authenticatedUser
@@ -143,7 +144,7 @@ public class DocumentController {
                     @ApiResponse(responseCode = "404", description = "Not Found - Collection or file not found")
             }
     )
-    @GetMapping("/{collectionId}/files/{documentId}")
+    @GetMapping("/collection/{collectionId}/document/{documentId}")
     public ResponseEntity<DocumentCollectionResponse<FileEntryData>> getFileFromCollection(
             @Parameter(description = "ID of the document collection") @PathVariable String collectionId,
             @Parameter(description = "Document ID of the file to retrieve") @PathVariable String documentId,
@@ -160,7 +161,7 @@ public class DocumentController {
     @Operation(
             summary = "Delete a document collection",
             description = "Allows users to delete their uploaded document collections.")
-    @DeleteMapping("/{collectionId}")
+    @DeleteMapping("/collection/{collectionId}")
     public ResponseEntity<Void> deleteDocument(
             @PathVariable String collectionId,
             Authentication authenticatedUser
@@ -179,7 +180,7 @@ public class DocumentController {
                     @ApiResponse(responseCode = "404", description = "Not Found - Collection or file not found")
             }
     )
-    @DeleteMapping("/{collectionId}/files/{documentId}")
+    @DeleteMapping("/collection/{collectionId}/document/{documentId}")
     public ResponseEntity<Void> deleteFileFromCollection(
             @Parameter(description = "ID of the document collection") @PathVariable String collectionId,
             @Parameter(description = "Document ID of the file to be deleted") @PathVariable String documentId,

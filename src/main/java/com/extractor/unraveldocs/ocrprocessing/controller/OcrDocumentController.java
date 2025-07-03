@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -88,7 +89,7 @@ public class OcrDocumentController {
     public ResponseEntity<DocumentCollectionResponse<DocumentCollectionUploadData>> extractTextFromAllFiles(
             @Parameter(description = "Files to be uploaded and extracted", required = true,
                     content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-            @RequestParam("files") MultipartFile[] files,
+            @RequestParam("files") @NotNull MultipartFile[] files,
             Authentication authenticatedUser
     ) {
         User user = getAuthenticatedUser(authenticatedUser);

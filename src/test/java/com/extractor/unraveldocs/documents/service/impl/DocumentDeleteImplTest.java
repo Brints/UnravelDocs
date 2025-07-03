@@ -3,6 +3,7 @@ package com.extractor.unraveldocs.documents.service.impl;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
 import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
+import com.extractor.unraveldocs.documents.impl.DocumentDeleteImpl;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.repository.DocumentCollectionRepository;

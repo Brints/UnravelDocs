@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.ocrprocessing.service.impl;
+package com.extractor.unraveldocs.ocrprocessing.impl;
 
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
 import com.extractor.unraveldocs.documents.model.FileEntry;
@@ -10,6 +10,7 @@ import com.extractor.unraveldocs.ocrprocessing.model.OcrData;
 import com.extractor.unraveldocs.ocrprocessing.repository.OcrDataRepository;
 import com.extractor.unraveldocs.ocrprocessing.utils.FindAndValidateFileEntry;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,7 @@ public class GetOcrDataImpl implements GetOcrDataService {
         FileResultData fileResultData = getFileResultData(ocrDataOptional, fileEntry);
 
         return DocumentCollectionResponse.<FileResultData>builder()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .status("success")
                 .message("OCR data retrieved successfully.")
                 .data(fileResultData)

@@ -1,10 +1,9 @@
 package com.extractor.unraveldocs.ocrprocessing.utils;
 
-import com.extractor.unraveldocs.config.DocumentConfigProperties;
 import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
 import com.extractor.unraveldocs.documents.model.FileEntry;
 import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
+import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
@@ -15,8 +14,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class FileStorageService {
-    private final CloudinaryService cloudinaryService;
-    private final DocumentConfigProperties documentConfigProperties;
+    private final AwsS3Service awsS3Service;
 
     public static int getStorageFailures(
             List<FileEntry> processedFiles,
@@ -46,17 +44,11 @@ public class FileStorageService {
      * @param originalFileName  The original filename of the uploaded file.
      * @return A FileEntry object containing details of the uploaded file.
      */
-    public FileEntry handleSuccessfulFileUpload(
-            MultipartFile file,
-            String originalFileName
-    ) {
-        String fileUrl = cloudinaryService.uploadFile(
-                file,
-                documentConfigProperties.getStorageFolder(),
-                originalFileName,
-                CloudinaryService.getRESOURCE_TYPE_IMAGE()
-        );
-        String publicId = cloudinaryService.generateRandomPublicId(originalFileName);
+    public FileEntry handleSuccessfulFileUpload(MultipartFile file, String originalFileName) {
+        String fileName = awsS3Service.generateFileName(originalFileName, AwsS3Service.getDOCUMENT_PICTURE_FOLDER());
+        String fileUrl = awsS3Service.uploadFile(file, fileName);
+
+        String publicId = awsS3Service.generateRandomPublicId(originalFileName);
 
         return FileEntry.builder()
                 .originalFileName(originalFileName)

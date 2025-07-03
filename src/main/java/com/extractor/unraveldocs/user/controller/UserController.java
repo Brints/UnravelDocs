@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,7 +31,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
@@ -202,14 +200,6 @@ public class UserController {
         if (file.isEmpty()) {
             throw new BadRequestException("File cannot be empty");
         }
-        if (!Objects.requireNonNull(file.getContentType()).startsWith("image/")) {
-            return ResponseEntity.badRequest().body(
-                    new UserResponse<>(
-                            HttpStatus.BAD_REQUEST.value(),
-                            "error",
-                            "Invalid file type",
-                            null));
-        }
 
         // Create a bucket for user actions if it doesn't exist
         Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
@@ -250,13 +240,6 @@ public class UserController {
         }
         userService.deleteProfilePicture(user);
 
-        var response = new UserResponse<Void>(
-                HttpStatus.OK.value(),
-                "success",
-                "Profile picture deleted successfully",
-                null
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.deleteProfilePicture(user));
     }
 }

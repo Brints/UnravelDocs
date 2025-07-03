@@ -9,6 +9,7 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.ocrprocessing.dto.response.CollectionResultResponse;
 import com.extractor.unraveldocs.ocrprocessing.dto.response.FileResultData;
 import com.extractor.unraveldocs.ocrprocessing.enums.OcrStatus;
+import com.extractor.unraveldocs.ocrprocessing.impl.GetCollectionResultImpl;
 import com.extractor.unraveldocs.ocrprocessing.model.OcrData;
 import com.extractor.unraveldocs.ocrprocessing.repository.OcrDataRepository;
 import org.junit.jupiter.api.BeforeEach;

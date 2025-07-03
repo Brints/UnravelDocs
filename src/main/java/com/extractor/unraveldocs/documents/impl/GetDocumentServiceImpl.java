@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.documents.service.impl;
+package com.extractor.unraveldocs.documents.impl;
 
 import com.extractor.unraveldocs.documents.dto.response.*;
 import com.extractor.unraveldocs.documents.interfaces.GetDocumentService;

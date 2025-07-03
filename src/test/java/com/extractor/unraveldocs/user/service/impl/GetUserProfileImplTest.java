@@ -4,6 +4,7 @@ import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.global.response.UserResponse;
 import com.extractor.unraveldocs.user.dto.UserData;
+import com.extractor.unraveldocs.user.impl.GetUserProfileImpl;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;

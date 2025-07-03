@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.ocrprocessing.service.impl;
+package com.extractor.unraveldocs.ocrprocessing.impl;
 
 import com.extractor.unraveldocs.documents.dto.response.DocumentCollectionResponse;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;

@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.user.service.impl;
+package com.extractor.unraveldocs.user.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;

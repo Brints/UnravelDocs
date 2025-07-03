@@ -9,6 +9,7 @@ import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateServi
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
 import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.user.impl.PasswordResetImpl;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;

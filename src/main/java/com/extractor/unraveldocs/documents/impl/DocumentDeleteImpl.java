@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.documents.service.impl;
+package com.extractor.unraveldocs.documents.impl;
 
 import com.extractor.unraveldocs.documents.enums.DocumentStatus;
 import com.extractor.unraveldocs.documents.enums.DocumentUploadState;
@@ -9,7 +9,7 @@ import com.extractor.unraveldocs.documents.repository.DocumentCollectionReposito
 import com.extractor.unraveldocs.documents.utils.SanitizeLogging;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
+import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -24,7 +24,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class DocumentDeleteImpl implements DocumentDeleteService {
-    private final CloudinaryService cloudinaryService;
+    private final AwsS3Service awsS3Service;
     private final DocumentCollectionRepository documentCollectionRepository;
     private final SanitizeLogging s;
 
@@ -47,7 +47,7 @@ public class DocumentDeleteImpl implements DocumentDeleteService {
         for (FileEntry fileEntry : new ArrayList<>(collection.getFiles())) {
             if ("SUCCESS".equals(fileEntry.getUploadStatus()) && fileEntry.getStorageId() != null) {
                 try {
-                    cloudinaryService.deleteFile(fileEntry.getFileUrl());
+                    awsS3Service.deleteFile(fileEntry.getFileUrl());
                     log.info("Deleted file with storage ID {} (document ID {}) from Cloudinary for collection {}",
                             s.sanitizeLogging(fileEntry.getStorageId()),
                             s.sanitizeLogging(fileEntry.getDocumentId()),
@@ -95,7 +95,7 @@ public class DocumentDeleteImpl implements DocumentDeleteService {
                 DocumentUploadState.SUCCESS.toString().equals(entryToRemove.getUploadStatus()) &&
                 entryToRemove.getStorageId() != null) {
             try {
-                cloudinaryService.deleteFile(entryToRemove.getFileUrl());
+                awsS3Service.deleteFile(entryToRemove.getFileUrl());
                 log.info("Successfully deleted file with storage ID {} (document ID {}) from Cloudinary.",
                         s.sanitizeLogging(entryToRemove.getStorageId()), s.sanitizeLogging(entryToRemove.getDocumentId()));
             } catch (Exception e) {
