@@ -84,6 +84,7 @@ public class DeleteUserImpl implements DeleteUserService {
                 if (user.getUserVerification() != null) {
                     userVerificationRepository.delete(user.getUserVerification());
                 }
+                userEmailTemplateService.sendDeletedAccountEmail(user.getEmail());
             }
             userRepository.deleteAll(usersToDelete);
             pageable = usersToDeletePage.nextPageable();
@@ -100,6 +101,8 @@ public class DeleteUserImpl implements DeleteUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
+        userEmailTemplateService.sendDeletedAccountEmail(user.getEmail());
+
         if (user.getProfilePicture() != null) {
             awsS3Service.deleteFile(user.getProfilePicture());
         }
@@ -109,9 +112,6 @@ public class DeleteUserImpl implements DeleteUserService {
         }
 
         userRepository.delete(user);
-
-        // TODO: Send email notification to the user
-        userEmailTemplateService.sendDeletedAccountEmail(user.getEmail());
     }
 
     private void scheduleDeletionForUser(User user) {
