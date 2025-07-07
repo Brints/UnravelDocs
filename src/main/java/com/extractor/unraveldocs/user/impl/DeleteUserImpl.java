@@ -6,10 +6,13 @@ import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateServi
 import com.extractor.unraveldocs.user.interfaces.userimpl.DeleteUserService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
+import com.extractor.unraveldocs.utils.imageupload.aws.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,27 +24,19 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DeleteUserImpl implements DeleteUserService {
+    private final AwsS3Service awsS3Service;
+    private final UserEmailTemplateService userEmailTemplateService;
     private final UserRepository userRepository;
     private final UserVerificationRepository userVerificationRepository;
-    private final CloudinaryService cloudinaryService;
-    private final UserEmailTemplateService userEmailTemplateService;
+
+    private static final int BATCH_SIZE = 100;
 
     @Override
     @Transactional
     public void scheduleUserDeletion(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-
-        OffsetDateTime deletionDate = OffsetDateTime.now().plusDays(10);
-        user.setDeletedAt(deletionDate);
-
-        if (user.getUserVerification() != null) {
-            user.getUserVerification().setDeletedAt(deletionDate);
-        }
-
-        // TODO: Send email notification to the user
-        userEmailTemplateService.scheduleUserDeletion(user.getEmail());
-
+        scheduleDeletionForUser(user);
         userRepository.save(user);
     }
 
@@ -49,25 +44,20 @@ public class DeleteUserImpl implements DeleteUserService {
     @Transactional
     @Scheduled(cron = "0 0 0 * * ?")
     public void checkAndScheduleInactiveUsers() {
-        log.info("Checking for inactive users to schedule deletion...");
         OffsetDateTime threshold = OffsetDateTime.now().minusMonths(12);
 
-        List<User> inactiveUsers = userRepository.findAllByLastLoginDateBefore(threshold);
+        Pageable pageable = PageRequest.of(0, BATCH_SIZE);
+        Page<User> inactiveUsersPage;
 
-        for (User user : inactiveUsers) {
-            OffsetDateTime deletionDate = OffsetDateTime.now().plusDays(10);
-            user.setActive(false);
-            user.setDeletedAt(deletionDate);
-
-            if (user.getUserVerification() != null) {
-                user.getUserVerification().setDeletedAt(deletionDate);
+        do {
+            inactiveUsersPage = userRepository.findAllByLastLoginDateBefore(threshold, pageable);
+            for (User user : inactiveUsersPage.getContent()) {
+                user.setActive(false);
+                scheduleDeletionForUser(user);
             }
-
-            // TODO: Send email notification to the user
-            userEmailTemplateService.scheduleUserDeletion(user.getEmail());
-        }
-
-        userRepository.saveAll(inactiveUsers);
+            userRepository.saveAll(inactiveUsersPage.getContent());
+            pageable = inactiveUsersPage.nextPageable();
+        } while (inactiveUsersPage.hasNext());
     }
 
     @Override
@@ -78,22 +68,26 @@ public class DeleteUserImpl implements DeleteUserService {
             allEntries = true
     )
     public void processScheduledDeletions() {
-        log.info("Processing scheduled deletions...");
         OffsetDateTime threshold = OffsetDateTime.now();
 
-        List<User> usersToDelete = userRepository.findAllByDeletedAtBefore(threshold);
+        Pageable pageable = PageRequest.of(0, BATCH_SIZE);
+        Page<User> usersToDeletePage;
 
-        for (User user : usersToDelete) {
-            if (user.getProfilePicture() != null) {
-                cloudinaryService.deleteFile(user.getProfilePicture());
+        do {
+            usersToDeletePage = userRepository.findAllByDeletedAtBefore(threshold, pageable);
+            List<User> usersToDelete = usersToDeletePage.getContent();
+
+            for (User user : usersToDelete) {
+                if (user.getProfilePicture() != null) {
+                    awsS3Service.deleteFile(user.getProfilePicture());
+                }
+                if (user.getUserVerification() != null) {
+                    userVerificationRepository.delete(user.getUserVerification());
+                }
             }
-
-            if (user.getUserVerification() != null) {
-                userVerificationRepository.delete(user.getUserVerification());
-            }
-        }
-
-        userRepository.deleteAll(usersToDelete);
+            userRepository.deleteAll(usersToDelete);
+            pageable = usersToDeletePage.nextPageable();
+        } while (usersToDeletePage.hasNext());
     }
 
     @Override
@@ -107,7 +101,7 @@ public class DeleteUserImpl implements DeleteUserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getProfilePicture() != null) {
-            cloudinaryService.deleteFile(user.getProfilePicture());
+            awsS3Service.deleteFile(user.getProfilePicture());
         }
 
         if (user.getUserVerification() != null) {
@@ -117,5 +111,18 @@ public class DeleteUserImpl implements DeleteUserService {
         userRepository.delete(user);
 
         // TODO: Send email notification to the user
+        userEmailTemplateService.sendDeletedAccountEmail(user.getEmail());
+    }
+
+    private void scheduleDeletionForUser(User user) {
+        OffsetDateTime deletionDate = OffsetDateTime.now().plusDays(10);
+        user.setDeletedAt(deletionDate);
+
+        if (user.getUserVerification() != null) {
+            user.getUserVerification().setDeletedAt(deletionDate);
+        }
+
+        userEmailTemplateService
+                .scheduleUserDeletion(user.getEmail(), user.getFirstName(), user.getLastName(), deletionDate);
     }
 }

@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.auth.service.impl;
+package com.extractor.unraveldocs.auth.impl;
 
 import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;

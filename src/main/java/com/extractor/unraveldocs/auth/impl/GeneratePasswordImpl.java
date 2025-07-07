@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.auth.service.impl;
+package com.extractor.unraveldocs.auth.impl;
 
 import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
 import com.extractor.unraveldocs.auth.interfaces.GeneratePasswordService;

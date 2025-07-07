@@ -32,7 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+//import java.util.Objects;
 
 import static com.extractor.unraveldocs.ocrprocessing.utils.FileStorageService.getStorageFailures;
 
@@ -61,7 +61,8 @@ public class BulkDocumentUploadExtractionImpl implements BulkDocumentUploadExtra
         FileUploadValidationUtil.validateTotalFileSize(files);
 
         for (MultipartFile file : files) {
-            String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "unnamed_file");
+            //String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "unnamed_file");
+            String originalFilename = file.getOriginalFilename();
 
             FileEntryData.FileEntryDataBuilder fileEntryDataBuilder = FileEntryData.builder()
                     .originalFileName(originalFilename)
@@ -120,13 +121,13 @@ public class BulkDocumentUploadExtractionImpl implements BulkDocumentUploadExtra
                     .anyMatch(fe -> DocumentUploadState.SUCCESS.toString().equals(fe.getUploadStatus()));
 
             if (anyProcessedSucceededInStorage) {
-                documentCollection.setCollectionStatus(DocumentStatus.PROCESSING); // Now defaults to PROCESSING
+                documentCollection.setCollectionStatus(DocumentStatus.PROCESSING);
             } else {
                 documentCollection.setCollectionStatus(DocumentStatus.FAILED_UPLOAD);
             }
 
             DocumentCollection savedCollection = documentCollectionRepository.save(documentCollection);
-            documentCollectionRepository.flush();
+            documentCollectionRepository.flush(); // Ensure the collection is saved before accessing its ID
 
             savedCollectionId = savedCollection.getId();
 

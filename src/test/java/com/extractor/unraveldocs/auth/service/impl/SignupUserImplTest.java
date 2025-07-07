@@ -4,6 +4,7 @@ import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
+import com.extractor.unraveldocs.auth.impl.SignupUserImpl;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;

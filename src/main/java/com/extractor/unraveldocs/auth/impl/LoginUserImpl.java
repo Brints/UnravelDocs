@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.auth.service.impl;
+package com.extractor.unraveldocs.auth.impl;
 
 import com.extractor.unraveldocs.auth.dto.LoginData;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
@@ -74,6 +74,14 @@ public class LoginUserImpl implements LoginUserService {
         } else {
             log.error("Could not generate JTI for refresh token for user {}", authenticatedUser.getEmail());
             throw new TokenProcessingException("Error processing refresh token.");
+        }
+
+        if (authenticatedUser.getDeletedAt() != null) {
+            authenticatedUser.setDeletedAt(null);
+            authenticatedUser.setActive(true);
+            if (authenticatedUser.getUserVerification() != null) {
+                authenticatedUser.getUserVerification().setDeletedAt(null);
+            }
         }
 
         authenticatedUser.setLastLogin(OffsetDateTime.now());

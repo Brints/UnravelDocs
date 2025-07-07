@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.auth.service.impl;
+package com.extractor.unraveldocs.auth.impl;
 
 import com.extractor.unraveldocs.auth.dto.RefreshLoginData;
 import com.extractor.unraveldocs.auth.dto.request.RefreshTokenRequest;
