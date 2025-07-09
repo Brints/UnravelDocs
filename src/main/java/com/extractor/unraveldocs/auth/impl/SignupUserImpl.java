@@ -9,9 +9,11 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
+import com.extractor.unraveldocs.subscription.impl.AssignSubscriptionService;
+import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
@@ -35,11 +37,12 @@ public class SignupUserImpl implements SignupUserService {
     private final GenerateVerificationToken verificationToken;
     private final PasswordEncoder passwordEncoder;
     private final ResponseBuilderService responseBuilder;
+    private final AssignSubscriptionService assignSubscriptionService;
     private final UserLibrary userLibrary;
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponse<SignupData> registerUser(SignUpRequestDto request) {
+    public UnravelDocsDataResponse<SignupData> registerUser(SignUpRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already exists");
         }
@@ -70,6 +73,9 @@ public class SignupUserImpl implements SignupUserService {
         user.setVerified(false);
         user.setRole(role);
         user.setLastLogin(null);
+        user.setDeletedAt(null);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
 
         UserVerification userVerification = new UserVerification();
         userVerification.setEmailVerificationToken(emailVerificationToken);
@@ -86,6 +92,10 @@ public class SignupUserImpl implements SignupUserService {
         loginAttempts.setUser(user);
 
         user.setLoginAttempts(loginAttempts);
+
+        // Assign default subscription based on user role
+        UserSubscription subscription = assignSubscriptionService.assignDefaultSubscription(user);
+        user.setSubscription(subscription);
 
         userRepository.save(user);
 
@@ -106,6 +116,8 @@ public class SignupUserImpl implements SignupUserService {
                 .lastLogin(user.getLastLogin())
                 .isActive(user.isActive())
                 .isVerified(user.isVerified())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
 
         return responseBuilder.buildUserResponse(signupData, HttpStatus.CREATED, "User registered successfully");

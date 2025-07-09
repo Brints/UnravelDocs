@@ -6,9 +6,7 @@ import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.*;
 import com.extractor.unraveldocs.auth.service.AuthService;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
-import com.extractor.unraveldocs.global.response.UserResponse;
-import com.extractor.unraveldocs.user.model.User;
-import com.extractor.unraveldocs.utils.imageupload.cloudinary.CloudinaryService;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,16 +15,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -75,11 +69,11 @@ public class AuthController {
                     @ApiResponse(
                             responseCode = "201",
                             description = "User registered successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     )
             }
     )
-    public ResponseEntity<UserResponse<SignupData>> register(
+    public ResponseEntity<UnravelDocsDataResponse<SignupData>> register(
             @Valid @RequestBody SignUpRequestDto request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(request));
@@ -103,7 +97,7 @@ public class AuthController {
                     )
             }
     )
-    public ResponseEntity<UserResponse<LoginData>> login(@Valid @RequestBody LoginRequestDto request) {
+    public ResponseEntity<UnravelDocsDataResponse<LoginData>> login(@Valid @RequestBody LoginRequestDto request) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.loginUser(request));
     }
 
@@ -116,14 +110,14 @@ public class AuthController {
      */
     @GetMapping(value = "/verify-email", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Verify user email")
-    public ResponseEntity<UserResponse<Void>> verifyEmail(
+    public ResponseEntity<UnravelDocsDataResponse<Void>> verifyEmail(
             @Schema(description = "Email address of the user to verify", example = "john-doe@test.com")
            @RequestParam String email,
 
             @Schema(description = "Verification token sent to the user's email", example = "1234567890abcdef")
            @RequestParam String token) {
 
-        UserResponse<Void> response = authService.verifyEmail(email, token);
+        UnravelDocsDataResponse<Void> response = authService.verifyEmail(email, token);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -135,11 +129,11 @@ public class AuthController {
      */
     @PostMapping("/resend-verification-email")
     @Operation(summary = "Resend verification email")
-    public ResponseEntity<UserResponse<Void>> resendVerificationEmail(
+    public ResponseEntity<UnravelDocsDataResponse<Void>> resendVerificationEmail(
             @Valid @RequestBody ResendEmailVerificationDto request
             ) {
 
-        UserResponse<Void> response = authService.resendEmailVerification(request);
+        UnravelDocsDataResponse<Void> response = authService.resendEmailVerification(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -157,7 +151,7 @@ public class AuthController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Access token refreshed successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     ),
                     @ApiResponse(
                             responseCode = "401",
@@ -165,7 +159,7 @@ public class AuthController {
                     )
             }
     )
-    public ResponseEntity<UserResponse<RefreshLoginData>> refreshToken(
+    public ResponseEntity<UnravelDocsDataResponse<RefreshLoginData>> refreshToken(
             @Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request));
     }
@@ -185,12 +179,12 @@ public class AuthController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Logged out successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     )
             }
     )
-    public ResponseEntity<UserResponse<Void>> logout(HttpServletRequest request) {
-        UserResponse<Void> response = authService.logout(request);
+    public ResponseEntity<UnravelDocsDataResponse<Void>> logout(HttpServletRequest request) {
+        UnravelDocsDataResponse<Void> response = authService.logout(request);
         return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
 }

@@ -2,7 +2,7 @@ package com.extractor.unraveldocs.user.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ProfilePictureService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -23,7 +23,7 @@ public class ProfilePictureImpl implements ProfilePictureService {
 
     @Override
     @Transactional
-    public UserResponse<String> uploadProfilePicture(User user, MultipartFile file) {
+    public UnravelDocsDataResponse<String> uploadProfilePicture(User user, MultipartFile file) {
         if (FileType.IMAGE.isValid(file.getContentType())) {
             throw new BadRequestException("Invalid file type. Only image files are allowed.");
         }
@@ -44,7 +44,7 @@ public class ProfilePictureImpl implements ProfilePictureService {
 
     @Override
     @Transactional
-    public UserResponse<Void> deleteProfilePicture(User user) {
+    public UnravelDocsDataResponse<Void> deleteProfilePicture(User user) {
         if (user.getProfilePicture() == null || user.getProfilePicture().isEmpty()) {
             return builderService.buildUserResponse(
                     null,

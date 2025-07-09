@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateServi
 import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.security.TokenBlacklistService;
 import com.extractor.unraveldocs.user.dto.request.ChangePasswordDto;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.interfaces.userimpl.ChangePasswordService;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -35,7 +35,7 @@ public class ChangePasswordImpl implements ChangePasswordService {
 
     @Override
     @Transactional
-    public UserResponse<Void> changePassword(ChangePasswordDto request) {
+    public UnravelDocsDataResponse<Void> changePassword(ChangePasswordDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 

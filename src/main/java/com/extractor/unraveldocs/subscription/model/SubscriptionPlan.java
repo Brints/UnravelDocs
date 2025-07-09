@@ -1,0 +1,62 @@
+package com.extractor.unraveldocs.subscription.model;
+
+import com.extractor.unraveldocs.subscription.enums.SubscriptionCurrency;
+import com.extractor.unraveldocs.subscription.enums.SubscriptionPlans;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Set;
+
+@Data
+@Entity
+@Table(name = "subscription_plans")
+@NoArgsConstructor
+@AllArgsConstructor
+public class SubscriptionPlan {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true)
+    private SubscriptionPlans name;
+
+    @Column(nullable = false, name = "price", columnDefinition = "DECIMAL(10,2)")
+    private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private SubscriptionCurrency currency;
+
+    @Column(nullable = false, name = "billing_interval_unit")
+    private String billingIntervalUnit; // e.g., "month", "year"
+
+    @Column(nullable = false, name = "billing_interval_value")
+    private Integer billingIntervalValue; // e.g., 1 for monthly, 12 for yearly
+
+    @Column(nullable = false, name = "document_upload_limit")
+    private Integer documentUploadLimit; // Maximum number of documents a user can upload
+
+    @Column(nullable = false, name = "ocr_page_limit")
+    private Integer ocrPageLimit;
+
+    @Column(nullable = false, name = "is_active")
+    private boolean isActive = true;
+
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Discount> discounts;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false, name = "created_at")
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false, name = "updated_at")
+    private OffsetDateTime updatedAt;
+}

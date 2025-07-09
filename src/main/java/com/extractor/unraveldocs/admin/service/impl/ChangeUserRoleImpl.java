@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.exceptions.custom.UnauthorizedException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class ChangeUserRoleImpl implements ChangeUserRoleService {
     private final ResponseBuilderService responseBuilder;
 
     @Override
-    public UserResponse<AdminData> changeUserRole(ChangeRoleDto request, Authentication authentication) {
+    public UnravelDocsDataResponse<AdminData> changeUserRole(ChangeRoleDto request, Authentication authentication) {
         String userId = request.getUserId();
 
         // Admin or Super Admin check

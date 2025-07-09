@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.TokenProcessingException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.interfaces.LoginAttemptsService;
 import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.security.RefreshTokenService;
@@ -36,7 +36,7 @@ public class LoginUserImpl implements LoginUserService {
     private final RefreshTokenService refreshTokenService;
 
     @Override
-    public UserResponse<LoginData> loginUser(LoginRequestDto request) {
+    public UnravelDocsDataResponse<LoginData> loginUser(LoginRequestDto request) {
         Optional<User> userOpt = userRepository.findByEmail(request.email());
 
         userOpt.ifPresent(loginAttemptsService::checkIfUserBlocked);

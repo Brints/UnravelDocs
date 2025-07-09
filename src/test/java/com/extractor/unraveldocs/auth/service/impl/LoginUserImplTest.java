@@ -9,7 +9,7 @@ import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.TokenProcessingException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.interfaces.LoginAttemptsService;
 import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.security.RefreshTokenService;
@@ -100,7 +100,7 @@ public class LoginUserImplTest {
                 .updatedAt(user.getUpdatedAt())
                 .build();
 
-        UserResponse<LoginData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<LoginData> expectedResponse = new UnravelDocsDataResponse<>();
         expectedResponse.setStatusCode(HttpStatus.OK.value());
         expectedResponse.setStatus("success");
         expectedResponse.setMessage("User logged in successfully");
@@ -121,7 +121,7 @@ public class LoginUserImplTest {
         )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse<LoginData> response = loginUserImpl.loginUser(loginRequest);
+        UnravelDocsDataResponse<LoginData> response = loginUserImpl.loginUser(loginRequest);
 
         // Assert
         assertNotNull(response);
@@ -162,7 +162,7 @@ public class LoginUserImplTest {
         when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refreshToken");
         when(jwtTokenProvider.getJtiFromToken("refreshToken")).thenReturn("jti");
         when(responseBuilder.buildUserResponse(any(LoginData.class), eq(HttpStatus.OK), anyString()))
-                .thenReturn(new UserResponse<>());
+                .thenReturn(new UnravelDocsDataResponse<>());
 
         // Act
         loginUserImpl.loginUser(loginRequest);

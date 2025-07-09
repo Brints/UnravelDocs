@@ -1,9 +1,9 @@
 package com.extractor.unraveldocs.auth.interfaces;
 
 import com.extractor.unraveldocs.auth.dto.request.ResendEmailVerificationDto;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 
 public interface EmailVerificationService {
-    UserResponse<Void> verifyEmail(String email, String token);
-    UserResponse<Void> resendEmailVerification(ResendEmailVerificationDto request);
+    UnravelDocsDataResponse<Void> verifyEmail(String email, String token);
+    UnravelDocsDataResponse<Void> resendEmailVerification(ResendEmailVerificationDto request);
 }

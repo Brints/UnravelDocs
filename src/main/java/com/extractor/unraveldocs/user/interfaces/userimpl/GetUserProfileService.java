@@ -1,8 +1,8 @@
 package com.extractor.unraveldocs.user.interfaces.userimpl;
 
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.dto.UserData;
 
 public interface GetUserProfileService {
-    UserResponse<UserData> getUserProfileByOwner(String userId);
+    UnravelDocsDataResponse<UserData> getUserProfileByOwner(String userId);
 }

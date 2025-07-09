@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
@@ -131,10 +131,10 @@ class EmailVerificationImplTest {
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(responseBuilder.buildUserResponse(
                 isNull(), eq(HttpStatus.OK), eq("Verification email sent successfully.")
-        )).thenReturn(new UserResponse<>(HttpStatus.OK.value(), "success", "Verification email sent successfully.", null));
+        )).thenReturn(new UnravelDocsDataResponse<>(HttpStatus.OK.value(), "success", "Verification email sent successfully.", null));
 
         // Act
-        UserResponse<Void> response = emailVerificationService.resendEmailVerification(resendRequest);
+        UnravelDocsDataResponse<Void> response = emailVerificationService.resendEmailVerification(resendRequest);
 
         // Assert
         assertNotNull(response);
@@ -230,13 +230,13 @@ class EmailVerificationImplTest {
         when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        var expectedResponse = new UserResponse<>(HttpStatus.OK.value(), "success", "Email verified successfully", null);
+        var expectedResponse = new UnravelDocsDataResponse<>(HttpStatus.OK.value(), "success", "Email verified successfully", null);
         when(responseBuilder.buildUserResponse(
                 null, HttpStatus.OK, "Email verified successfully"
         )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse<Void> response = emailVerificationService.verifyEmail("john.doe@example.com", "validToken");
+        UnravelDocsDataResponse<Void> response = emailVerificationService.verifyEmail("john.doe@example.com", "validToken");
 
         // Assert
         assertNotNull(response);

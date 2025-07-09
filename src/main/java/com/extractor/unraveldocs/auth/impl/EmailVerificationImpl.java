@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
@@ -29,7 +29,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     private final AuthEmailTemplateService templatesService;
     private final ResponseBuilderService responseBuilder;
 
-    public UserResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
+    public UnravelDocsDataResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 
@@ -69,7 +69,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     }
 
     @Transactional
-    public UserResponse<Void> verifyEmail(String email, String token) {
+    public UnravelDocsDataResponse<Void> verifyEmail(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
 

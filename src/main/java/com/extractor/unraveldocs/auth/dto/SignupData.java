@@ -15,6 +15,8 @@ public record SignupData(
         Role role,
         OffsetDateTime lastLogin,
         boolean isActive,
-        boolean isVerified
+        boolean isVerified,
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt
 ) {
 }

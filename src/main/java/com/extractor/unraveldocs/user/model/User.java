@@ -4,6 +4,7 @@ import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.documents.model.DocumentCollection;
 import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
+import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,6 +69,9 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<DocumentCollection> documents;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private UserSubscription subscription;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")
