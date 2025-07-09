@@ -33,6 +33,7 @@ public class PasswordResetImpl implements PasswordResetService {
     private final UserEmailTemplateService userEmailTemplateService;
     private final UserRepository userRepository;
 
+    @Override
     public UnravelDocsDataResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         String email = forgotPasswordDto.email();
         User user = userRepository.findByEmail(email)

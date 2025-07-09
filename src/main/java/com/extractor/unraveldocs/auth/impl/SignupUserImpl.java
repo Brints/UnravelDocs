@@ -41,6 +41,7 @@ public class SignupUserImpl implements SignupUserService {
     private final UserLibrary userLibrary;
     private final UserRepository userRepository;
 
+    @Override
     @Transactional
     public UnravelDocsDataResponse<SignupData> registerUser(SignUpRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {

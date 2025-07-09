@@ -29,6 +29,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
     private final AuthEmailTemplateService templatesService;
     private final ResponseBuilderService responseBuilder;
 
+    @Override
     public UnravelDocsDataResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
@@ -68,6 +69,7 @@ public class EmailVerificationImpl implements EmailVerificationService {
                 null, HttpStatus.OK, "Verification email sent successfully.");
     }
 
+    @Override
     @Transactional
     public UnravelDocsDataResponse<Void> verifyEmail(String email, String token) {
         User user = userRepository.findByEmail(email)
