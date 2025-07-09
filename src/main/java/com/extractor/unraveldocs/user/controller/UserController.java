@@ -5,7 +5,7 @@ import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.TooManyRequestsException;
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.*;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.PasswordResetParams;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -109,7 +109,7 @@ public class UserController {
 
     @Operation(summary = "Change password")
     @PostMapping("/change-password")
-    public ResponseEntity<UserResponse<Void>> changePassword(
+    public ResponseEntity<UnravelDocsDataResponse<Void>> changePassword(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @RequestBody ChangePasswordDto changePasswordDto
     ) {
@@ -128,7 +128,7 @@ public class UserController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "User profile retrieved successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     )
             }
     )
@@ -138,7 +138,7 @@ public class UserController {
                     MediaType.APPLICATION_JSON_VALUE
             }
     )
-    public ResponseEntity<UserResponse<UserData>> updateProfile(
+    public ResponseEntity<UnravelDocsDataResponse<UserData>> updateProfile(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @Valid @ModelAttribute ProfileUpdateRequestDto request
     ) {
@@ -179,17 +179,17 @@ public class UserController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Profile picture uploaded successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     ),
                     @ApiResponse(
                             responseCode = "400",
                             description = "Invalid file type or empty file",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     )
             }
     )
     @PostMapping(value = "/upload-profile-picture", consumes = "multipart/form-data")
-    public ResponseEntity<UserResponse<String>> uploadProfilePicture(
+    public ResponseEntity<UnravelDocsDataResponse<String>> uploadProfilePicture(
             @AuthenticationPrincipal UserDetails authenticatedUser,
             @RequestParam("file") @NotNull MultipartFile file
     ) {
@@ -217,17 +217,17 @@ public class UserController {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Profile picture deleted successfully",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     ),
                     @ApiResponse(
                             responseCode = "400",
                             description = "Profile picture not found or already deleted",
-                            content = @Content(schema = @Schema(implementation = UserResponse.class))
+                            content = @Content(schema = @Schema(implementation = UnravelDocsDataResponse.class))
                     )
             }
     )
     @DeleteMapping("/delete-profile-picture")
-    public ResponseEntity<UserResponse<Void>> deleteProfilePicture(
+    public ResponseEntity<UnravelDocsDataResponse<Void>> deleteProfilePicture(
             @AuthenticationPrincipal UserDetails authenticatedUser
     ) {
         User user = getAuthenticatedUser(authenticatedUser);

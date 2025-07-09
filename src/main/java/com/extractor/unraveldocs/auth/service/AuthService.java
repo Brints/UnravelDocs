@@ -6,7 +6,7 @@ import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.*;
 import com.extractor.unraveldocs.auth.interfaces.*;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,19 +22,19 @@ public class AuthService {
     private final GeneratePasswordService generatePasswordService;
     private final RefreshTokenService refreshTokenService;
 
-    public UserResponse<SignupData> registerUser(SignUpRequestDto request) {
+    public UnravelDocsDataResponse<SignupData> registerUser(SignUpRequestDto request) {
         return signupUserService.registerUser(request);
     }
 
-    public UserResponse<LoginData> loginUser(LoginRequestDto request) {
+    public UnravelDocsDataResponse<LoginData> loginUser(LoginRequestDto request) {
         return loginUserService.loginUser(request);
     }
 
-    public UserResponse<Void> verifyEmail(String email, String token) {
+    public UnravelDocsDataResponse<Void> verifyEmail(String email, String token) {
         return emailVerificationService.verifyEmail(email, token);
     }
 
-    public UserResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
+    public UnravelDocsDataResponse<Void> resendEmailVerification(ResendEmailVerificationDto request) {
         return emailVerificationService.resendEmailVerification(request);
     }
 
@@ -42,11 +42,11 @@ public class AuthService {
         return generatePasswordService.generatePassword(passwordDto);
     }
 
-    public UserResponse<RefreshLoginData> refreshToken(RefreshTokenRequest request) {
+    public UnravelDocsDataResponse<RefreshLoginData> refreshToken(RefreshTokenRequest request) {
         return refreshTokenService.refreshToken(request);
     }
 
-    public UserResponse<Void> logout(HttpServletRequest request) {
+    public UnravelDocsDataResponse<Void> logout(HttpServletRequest request) {
         return refreshTokenService.logout(request);
     }
 }

@@ -2,8 +2,8 @@ package com.extractor.unraveldocs.admin.interfaces;
 
 import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
 import com.extractor.unraveldocs.admin.dto.response.UserListData;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 
 public interface GetAllUsersService {
-    UserResponse<UserListData> getAllUsers(UserFilterDto request);
+    UnravelDocsDataResponse<UserListData> getAllUsers(UserFilterDto request);
 }

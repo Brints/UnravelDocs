@@ -4,11 +4,12 @@ import com.extractor.unraveldocs.auth.dto.SignupData;
 import com.extractor.unraveldocs.auth.dto.request.SignUpRequestDto;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.auth.enums.VerifiedStatus;
+import com.extractor.unraveldocs.auth.impl.SignupUserImpl;
 import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ConflictException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
 import com.extractor.unraveldocs.user.model.User;
@@ -91,7 +92,7 @@ class SignupUserImplTest {
                 .lastLogin(null)
                 .build();
 
-        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<SignupData> expectedResponse = new UnravelDocsDataResponse<>();
         expectedResponse.setStatusCode(HttpStatus.CREATED.value());
         expectedResponse.setStatus("success");
         expectedResponse.setMessage("User registered successfully");
@@ -115,7 +116,7 @@ class SignupUserImplTest {
         )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse<SignupData> response = signupUserService.registerUser(request);
+        UnravelDocsDataResponse<SignupData> response = signupUserService.registerUser(request);
 
         // Assert
         assertNotNull(response);
@@ -161,7 +162,7 @@ class SignupUserImplTest {
                 .lastLogin(null)
                 .build();
 
-        UserResponse<SignupData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<SignupData> expectedResponse = new UnravelDocsDataResponse<>();
         expectedResponse.setStatusCode(HttpStatus.CREATED.value());
         expectedResponse.setStatus("success");
         expectedResponse.setMessage("User registered successfully");
@@ -184,7 +185,7 @@ class SignupUserImplTest {
         )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse<SignupData> response = signupUserService.registerUser(request);
+        UnravelDocsDataResponse<SignupData> response = signupUserService.registerUser(request);
 
         // Assert
         assertNotNull(response);

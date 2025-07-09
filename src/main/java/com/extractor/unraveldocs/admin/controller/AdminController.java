@@ -6,7 +6,7 @@ import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
 import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.service.AdminService;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.dto.UserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,12 +36,12 @@ public class AdminController {
             summary = "Change user role to ADMIN or MODERATOR",
             description = "Allows an admin to change the role of a user to ADMIN or MODERATOR.")
     @PutMapping("/change-role")
-    public ResponseEntity<UserResponse<AdminData>> changeUserRole(Authentication authenticatedUser, @RequestBody ChangeRoleDto request) {
+    public ResponseEntity<UnravelDocsDataResponse<AdminData>> changeUserRole(Authentication authenticatedUser, @RequestBody ChangeRoleDto request) {
         if (authenticatedUser == null) {
             throw new ForbiddenException("You must be logged in to change user roles");
         }
 
-        UserResponse<AdminData> response = adminService.changeUserRole(request, authenticatedUser);
+        UnravelDocsDataResponse<AdminData> response = adminService.changeUserRole(request, authenticatedUser);
 
         return ResponseEntity.ok(response);
     }
@@ -57,7 +57,7 @@ public class AdminController {
             summary = "Get all users",
             description = "Fetches a paginated list of all users with optional filtering and sorting.")
     @GetMapping("/users")
-    public ResponseEntity<UserResponse<UserListData>> getAllUsers(
+    public ResponseEntity<UnravelDocsDataResponse<UserListData>> getAllUsers(
             @Valid @ModelAttribute UserFilterDto request,
             Authentication authentication) {
 
@@ -65,7 +65,7 @@ public class AdminController {
             throw new ForbiddenException("You must be logged in to view users");
         }
 
-        UserResponse<UserListData> response = adminService.getAllUsers(request);
+        UnravelDocsDataResponse<UserListData> response = adminService.getAllUsers(request);
 
         return ResponseEntity.ok(response);
     }
@@ -80,8 +80,8 @@ public class AdminController {
             summary = "Get user profile by admin",
             description = "Fetches the profile of a user by admin.")
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse<UserData>> getUserProfileByAdmin(@PathVariable String userId) {
-        UserResponse<UserData> response = adminService.getUserProfileByAdmin(userId);
+    public ResponseEntity<UnravelDocsDataResponse<UserData>> getUserProfileByAdmin(@PathVariable String userId) {
+        UnravelDocsDataResponse<UserData> response = adminService.getUserProfileByAdmin(userId);
         return ResponseEntity.ok(response);
     }
 }

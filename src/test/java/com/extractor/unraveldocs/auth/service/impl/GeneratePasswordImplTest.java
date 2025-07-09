@@ -1,6 +1,7 @@
 package com.extractor.unraveldocs.auth.service.impl;
 
 import com.extractor.unraveldocs.auth.dto.request.GeneratePasswordDto;
+import com.extractor.unraveldocs.auth.impl.GeneratePasswordImpl;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.user.dto.response.GeneratePasswordResponse;
 import com.extractor.unraveldocs.utils.userlib.UserLibrary;

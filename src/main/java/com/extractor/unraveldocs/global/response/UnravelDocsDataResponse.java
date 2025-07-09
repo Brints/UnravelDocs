@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponse<T> {
+public class UnravelDocsDataResponse<T> {
     int statusCode;
     String status;
     String message;

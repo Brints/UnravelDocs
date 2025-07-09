@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.utils.admin;
+package com.extractor.unraveldocs.utils;
 
 import org.springframework.stereotype.Component;
 

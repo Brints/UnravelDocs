@@ -8,7 +8,7 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.impl.PasswordResetImpl;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.model.User;
@@ -104,10 +104,10 @@ class PasswordResetImplTest {
         when(dateHelper.getTimeLeftToExpiry(any(), any(), anyString())).thenReturn("1 hour");
         when(responseBuilder.buildUserResponse(
                 any(), any(), anyString()
-        )).thenReturn(new UserResponse<>());
+        )).thenReturn(new UnravelDocsDataResponse<>());
 
         // Act
-        UserResponse<Void> response = passwordResetService.forgotPassword(forgotPasswordDto);
+        UnravelDocsDataResponse<Void> response = passwordResetService.forgotPassword(forgotPasswordDto);
 
         // Assert
         assertNotNull(response);
@@ -162,10 +162,10 @@ class PasswordResetImplTest {
         when(passwordEncoder.encode(resetPasswordDto.newPassword())).thenReturn("encoded-password");
         when(responseBuilder.buildUserResponse(
                 any(), any(), anyString()
-        )).thenReturn(new UserResponse<>());
+        )).thenReturn(new UnravelDocsDataResponse<>());
 
         // Act
-        UserResponse<Void> response = passwordResetService.resetPassword(passwordResetParams, resetPasswordDto);
+        UnravelDocsDataResponse<Void> response = passwordResetService.resetPassword(passwordResetParams, resetPasswordDto);
 
         // Assert
         assertNotNull(response);

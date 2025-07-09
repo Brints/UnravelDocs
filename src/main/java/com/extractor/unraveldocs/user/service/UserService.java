@@ -2,7 +2,7 @@ package com.extractor.unraveldocs.user.service;
 
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.dto.request.*;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.*;
 import com.extractor.unraveldocs.user.model.User;
@@ -23,23 +23,23 @@ public class UserService {
     private final ProfilePictureService profilePictureService;
 
 
-    public UserResponse<UserData> getUserProfileByOwner(String userId) {
+    public UnravelDocsDataResponse<UserData> getUserProfileByOwner(String userId) {
         return getUserProfileService.getUserProfileByOwner(userId);
     }
 
-    public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+    public UnravelDocsDataResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         return passwordResetService.forgotPassword(forgotPasswordDto);
     }
 
-    public UserResponse<Void> resetPassword(IPasswordReset params, ResetPasswordDto request) {
+    public UnravelDocsDataResponse<Void> resetPassword(IPasswordReset params, ResetPasswordDto request) {
         return passwordResetService.resetPassword(params, request);
     }
 
-    public UserResponse<Void> changePassword(ChangePasswordDto request) {
+    public UnravelDocsDataResponse<Void> changePassword(ChangePasswordDto request) {
         return changePasswordService.changePassword(request);
     }
 
-    public UserResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {
+    public UnravelDocsDataResponse<UserData> updateProfile(ProfileUpdateRequestDto request, String userId) {
         return profileUpdateService.updateProfile(request, userId);
     }
 
@@ -47,11 +47,11 @@ public class UserService {
         deleteUserService.deleteUser(userId);
     }
 
-    public UserResponse<String> uploadProfilePicture(User user, MultipartFile file) {
+    public UnravelDocsDataResponse<String> uploadProfilePicture(User user, MultipartFile file) {
         return profilePictureService.uploadProfilePicture(user, file);
     }
 
-    public UserResponse<Void> deleteProfilePicture(User user) {
+    public UnravelDocsDataResponse<Void> deleteProfilePicture(User user) {
         return profilePictureService.deleteProfilePicture(user);
     }
 }

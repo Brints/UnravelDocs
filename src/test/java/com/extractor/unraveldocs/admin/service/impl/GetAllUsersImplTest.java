@@ -5,7 +5,7 @@ import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.dto.response.UserSummary;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class GetAllUsersImplTest {
     private UserFilterDto userFilterDto;
     private User user;
     private Page<User> userPage;
-    private UserResponse<UserListData> expectedResponse;
+    private UnravelDocsDataResponse<UserListData> expectedResponse;
 
     @BeforeEach
     void setUp() {
@@ -98,7 +98,7 @@ class GetAllUsersImplTest {
         userListData.setCurrentPage(0);
         userListData.setPageSize(10);
 
-        expectedResponse = new UserResponse<>();
+        expectedResponse = new UnravelDocsDataResponse<>();
         expectedResponse.setData(userListData);
         expectedResponse.setStatus("success");
         expectedResponse.setStatusCode(HttpStatus.OK.value());
@@ -136,7 +136,7 @@ class GetAllUsersImplTest {
             return expectedResponse; // Return the pre-configured expectedResponse
         });
 
-        UserResponse<UserListData> actualResponse = getAllUsersService.getAllUsers(userFilterDto);
+        UnravelDocsDataResponse<UserListData> actualResponse = getAllUsersService.getAllUsers(userFilterDto);
 
         assertNotNull(actualResponse);
         assertEquals(expectedResponse.getStatus(), actualResponse.getStatus());
@@ -196,7 +196,7 @@ class GetAllUsersImplTest {
         emptyUserListData.setCurrentPage(0);
         emptyUserListData.setPageSize(10);
 
-        UserResponse<UserListData> emptyExpectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<UserListData> emptyExpectedResponse = new UnravelDocsDataResponse<>();
         emptyExpectedResponse.setData(emptyUserListData);
         emptyExpectedResponse.setStatus("success");
         emptyExpectedResponse.setStatusCode(HttpStatus.OK.value());
@@ -209,7 +209,7 @@ class GetAllUsersImplTest {
                 eq("Successfully fetched all users.")
         )).thenReturn(emptyExpectedResponse);
 
-        UserResponse<UserListData> actualResponse = getAllUsersService.getAllUsers(userFilterDto);
+        UnravelDocsDataResponse<UserListData> actualResponse = getAllUsersService.getAllUsers(userFilterDto);
 
         assertNotNull(actualResponse);
         assertEquals(emptyExpectedResponse, actualResponse);

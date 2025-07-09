@@ -3,11 +3,13 @@ package com.extractor.unraveldocs.auth.service.impl;
 import com.extractor.unraveldocs.auth.dto.LoginData;
 import com.extractor.unraveldocs.auth.dto.request.LoginRequestDto;
 import com.extractor.unraveldocs.auth.enums.Role;
+import com.extractor.unraveldocs.auth.impl.LoginUserImpl;
+import com.extractor.unraveldocs.auth.model.UserVerification;
 import com.extractor.unraveldocs.exceptions.custom.BadRequestException;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.TokenProcessingException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.interfaces.LoginAttemptsService;
 import com.extractor.unraveldocs.security.JwtTokenProvider;
 import com.extractor.unraveldocs.security.RefreshTokenService;
@@ -98,7 +100,7 @@ public class LoginUserImplTest {
                 .updatedAt(user.getUpdatedAt())
                 .build();
 
-        UserResponse<LoginData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<LoginData> expectedResponse = new UnravelDocsDataResponse<>();
         expectedResponse.setStatusCode(HttpStatus.OK.value());
         expectedResponse.setStatus("success");
         expectedResponse.setMessage("User logged in successfully");
@@ -119,7 +121,7 @@ public class LoginUserImplTest {
         )).thenReturn(expectedResponse);
 
         // Act
-        UserResponse<LoginData> response = loginUserImpl.loginUser(loginRequest);
+        UnravelDocsDataResponse<LoginData> response = loginUserImpl.loginUser(loginRequest);
 
         // Assert
         assertNotNull(response);
@@ -141,6 +143,36 @@ public class LoginUserImplTest {
         verify(refreshTokenService).storeRefreshToken("refreshTokenJti", user.getId());
         verify(userRepository).save(user); // User is saved after lastLogin update
         verify(responseBuilder).buildUserResponse(any(LoginData.class), eq(HttpStatus.OK), eq("User logged in successfully"));
+    }
+
+    @Test
+    void loginUser_withScheduledDeletion_cancelsDeletionAndLogsIn() {
+        // Arrange
+        OffsetDateTime deletionTime = OffsetDateTime.now().plusDays(5);
+        user.setDeletedAt(deletionTime);
+        user.setActive(false);
+        UserVerification verification = new UserVerification();
+        verification.setDeletedAt(deletionTime);
+        user.setUserVerification(verification);
+
+        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.of(user));
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(jwtTokenProvider.generateAccessToken(user)).thenReturn("accessToken");
+        when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refreshToken");
+        when(jwtTokenProvider.getJtiFromToken("refreshToken")).thenReturn("jti");
+        when(responseBuilder.buildUserResponse(any(LoginData.class), eq(HttpStatus.OK), anyString()))
+                .thenReturn(new UnravelDocsDataResponse<>());
+
+        // Act
+        loginUserImpl.loginUser(loginRequest);
+
+        // Assert
+        assertNull(user.getDeletedAt(), "DeletedAt should be cleared on login.");
+        assertTrue(user.isActive(), "User should be set to active on login.");
+        assertNull(user.getUserVerification().getDeletedAt(), "UserVerification DeletedAt should be cleared.");
+        assertNotNull(user.getLastLogin(), "Last login should be updated.");
+        verify(userRepository).save(user);
     }
 
     @Test

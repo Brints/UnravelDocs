@@ -7,7 +7,7 @@ import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.exceptions.custom.UnauthorizedException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,11 +81,11 @@ public class ChangeUserRoleTest {
         when(userRepository.findById("testUserId")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        UserResponse<AdminData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<AdminData> expectedResponse = new UnravelDocsDataResponse<>();
         when(responseBuilder.buildUserResponse(any(AdminData.class), eq(HttpStatus.OK), eq("User role changed successfully.")))
                 .thenReturn(expectedResponse);
 
-        UserResponse<AdminData> actualResponse = changeUserRoleService.changeUserRole(changeRoleDto, authentication);
+        UnravelDocsDataResponse<AdminData> actualResponse = changeUserRoleService.changeUserRole(changeRoleDto, authentication);
 
         assertNotNull(actualResponse);
         assertEquals(expectedResponse, actualResponse);
@@ -101,11 +101,11 @@ public class ChangeUserRoleTest {
         when(userRepository.findById("testUserId")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        UserResponse<AdminData> expectedResponse = new UserResponse<>();
+        UnravelDocsDataResponse<AdminData> expectedResponse = new UnravelDocsDataResponse<>();
         when(responseBuilder.buildUserResponse(any(AdminData.class), eq(HttpStatus.OK), eq("User role changed successfully.")))
                 .thenReturn(expectedResponse);
 
-        UserResponse<AdminData> actualResponse = changeUserRoleService.changeUserRole(changeRoleDto, authentication);
+        UnravelDocsDataResponse<AdminData> actualResponse = changeUserRoleService.changeUserRole(changeRoleDto, authentication);
 
         assertNotNull(actualResponse);
         assertEquals(expectedResponse, actualResponse);

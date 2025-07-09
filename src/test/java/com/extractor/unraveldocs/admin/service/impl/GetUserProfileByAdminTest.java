@@ -2,7 +2,7 @@ package com.extractor.unraveldocs.admin.service.impl;
 
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.dto.UserData;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
@@ -39,7 +39,7 @@ public class GetUserProfileByAdminTest {
     private ArgumentCaptor<UserData> userDataCaptor;
 
     private User mockUser;
-    private UserResponse<UserData> mockResponse;
+    private UnravelDocsDataResponse<UserData> mockResponse;
     private static final String USER_ID = "test-user-id";
 
     @BeforeEach
@@ -49,7 +49,7 @@ public class GetUserProfileByAdminTest {
         mockUser.setId(USER_ID);
 
         // Create mock response
-        mockResponse = new UserResponse<>();
+        mockResponse = new UnravelDocsDataResponse<>();
         mockResponse.setStatusCode(HttpStatus.OK.value());
         mockResponse.setMessage("User profile retrieved successfully");
     }
@@ -65,7 +65,7 @@ public class GetUserProfileByAdminTest {
         )).thenReturn(mockResponse);
 
         // Act
-        UserResponse<UserData> result = getUserProfileByAdmin.getUserProfileByAdmin(USER_ID);
+        UnravelDocsDataResponse<UserData> result = getUserProfileByAdmin.getUserProfileByAdmin(USER_ID);
 
         // Assert
         assertNotNull(result);

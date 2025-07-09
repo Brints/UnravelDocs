@@ -8,7 +8,7 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.messaging.emailtemplates.UserEmailTemplateService;
 import com.extractor.unraveldocs.user.dto.request.ForgotPasswordDto;
 import com.extractor.unraveldocs.user.dto.request.ResetPasswordDto;
-import com.extractor.unraveldocs.global.response.UserResponse;
+import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.user.interfaces.passwordreset.IPasswordReset;
 import com.extractor.unraveldocs.user.interfaces.userimpl.PasswordResetService;
 import com.extractor.unraveldocs.user.model.User;
@@ -33,7 +33,8 @@ public class PasswordResetImpl implements PasswordResetService {
     private final UserEmailTemplateService userEmailTemplateService;
     private final UserRepository userRepository;
 
-    public UserResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+    @Override
+    public UnravelDocsDataResponse<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
         String email = forgotPasswordDto.email();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User does not exist."));
@@ -85,7 +86,7 @@ public class PasswordResetImpl implements PasswordResetService {
     }
 
     @Override
-    public UserResponse<Void> resetPassword(IPasswordReset params, ResetPasswordDto request) {
+    public UnravelDocsDataResponse<Void> resetPassword(IPasswordReset params, ResetPasswordDto request) {
         String email = params.getEmail();
         String token = params.getToken();
 

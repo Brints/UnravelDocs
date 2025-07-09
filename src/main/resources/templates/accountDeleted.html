@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Account Deleted | UnravelDocs</title>
+    <style type="text/css">
+        /* Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+        a { color: #3182ce; }
+
+        /* Responsive */
+        @media screen and (max-width: 600px) {
+            .content-card {
+                width: 100% !important;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #f4f6fb; margin: 0 !important; padding: 0 !important; font-family: 'Segoe UI', Arial, sans-serif;">
+
+<!-- PREHEADER TEXT -->
+<div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+    Your UnravelDocs account has been deleted.
+</div>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="center" style="background-color: #f4f6fb; padding: 40px 15px;">
+            <!--[if (gte mso 9)|(IE)]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                    <td align="center" valign="top" width="600">
+            <![endif]-->
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);" class="content-card">
+                <!-- HEADER -->
+                <tr>
+                    <td align="center" style="padding: 40px 20px 20px 20px;">
+                        <div style="font-size: 48px; color: #e53e3e; margin-bottom: 8px;">&#128577;</div>
+                        <h1 style="font-size: 32px; font-weight: bold; color: #2d3748; margin: 0; font-family: 'Segoe UI', Arial, sans-serif;">Account Deleted</h1>
+                    </td>
+                </tr>
+                <!-- MAIN CONTENT -->
+                <tr>
+                    <td align="left" style="padding: 20px 32px; background-color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; font-size: 17px; line-height: 1.7; color: #4a5568;">
+                        <p style="margin: 0 0 15px 0;">
+                            Hi <span th:text="${firstName}">there</span>,
+                        </p>
+                        <p style="margin: 0 0 15px 0;">
+                            We're writing to confirm that your account has been <strong>successfully deleted</strong> from <span style="color:#3182ce;font-weight:600;">UnravelDocs</span>.
+                        </p>
+                        <p style="margin: 0 0 15px 0;">
+                            We are genuinely <span style="color:#e53e3e;">sad to see you go</span>. Your presence and contributions were valued, and our community will miss you.
+                        </p>
+                        <p style="margin: 0 0 25px 0;">
+                            If you have any feedback on how we can improve, please let us know. Should you ever wish to return, we’ll be here to welcome you back.
+                        </p>
+                        <!-- ACTION BUTTON -->
+                        <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td align="center" style="border-radius: 6px;" bgcolor="#3182ce">
+                                                <a href="https://unraveldocs.xyz" target="_blank" style="font-size: 16px; font-family: 'Segoe UI', Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 6px; padding: 12px 28px; border: 1px solid #3182ce; display: inline-block; font-weight: 600;">Visit UnravelDocs</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <!-- GOODBYE -->
+                <tr>
+                    <td style="padding: 32px; color: #718096; font-size: 16px;">
+                        Best regards,<br>
+                        The UnravelDocs Team
+                    </td>
+                </tr>
+                <!-- FOOTER -->
+                <tr>
+                    <td align="center" style="padding: 20px 32px; border-top: 1px solid #eeeeee; color: #a0aec0; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 20px;">
+                        <p style="margin: 0;">&copy; <span th:text="${#dates.year(#dates.createNow())}">2025</span> UnravelDocs. All rights reserved.</p>
+                        <p style="margin: 5px 0 0 0;">If you have questions, contact us at <a href="mailto:support@unraveldocs.xyz" style="color:#3182ce; text-decoration: none;">support@unraveldocs.xyz</a></p>
+                    </td>
+                </tr>
+            </table>
+            <!--[if (gte mso 9)|(IE)]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </td>
+    </tr>
+</table>
+</body>
+</html>

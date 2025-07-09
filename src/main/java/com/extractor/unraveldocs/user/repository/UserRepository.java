@@ -48,8 +48,14 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean superAdminExists();
 
     @Query("SELECT u FROM User u WHERE u.lastLogin < :threshold AND u.deletedAt IS NULL")
-    List<User> findAllByLastLoginDateBefore(@Param("threshold") OffsetDateTime threshold);
+    Page<User> findAllByLastLoginDateBefore(@Param("threshold") OffsetDateTime threshold, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE u.lastLogin < :threshold AND u.deletedAt IS NULL")
-    List<User> findAllByDeletedAtBefore(@Param("threshold") OffsetDateTime threshold);
+    @Query("SELECT u FROM User u WHERE u.deletedAt < :threshold")
+    Page<User> findAllByDeletedAtBefore(@Param("threshold") OffsetDateTime threshold, Pageable pageable);
 }
+
+
+
+
+//    @Query("SELECT u FROM User u WHERE u.lastLogin < :threshold AND u.deletedAt IS NULL")
+//    List<User> findAllByDeletedAtBefore(@Param("threshold") OffsetDateTime threshold);
