@@ -1,0 +1,2 @@
+ALTER TABLE user_subscriptions
+ADD COLUMN auto_renew BOOLEAN NOT NULL DEFAULT FALSE;

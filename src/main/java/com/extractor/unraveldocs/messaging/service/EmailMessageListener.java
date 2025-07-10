@@ -42,12 +42,18 @@ public class EmailMessageListener {
 
     private String generateEmailContent(EmailMessage message) {
         Map<String, Object> model = message.getTemplateModel();
+
         return switch (message.getTemplateName()) {
             case "passwordResetToken" -> {
+                String email = (String) model.get("email");
+                String token = (String) model.get("token");
 
-                String resetUrl = baseUrl + "/api/v1/user/reset-password?token=" + model.get("token") + "&email=" + model.get("email");
-                String expiration = ((OffsetDateTime) model.get("expiration"))
-                        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT));
+                String resetUrl = baseUrl + "/api/v1/user/reset-password?token=" + token + "&email=" + email;
+
+                String expiration = model.get("expiration") instanceof OffsetDateTime
+                        ? ((OffsetDateTime) model.get("expiration"))
+                        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))
+                        : (String) model.get("expiration");
 
                 yield thymleafEmailService.generateSendPasswordResetTokenContent(
                         (String) model.get("firstName"),
@@ -76,9 +82,16 @@ public class EmailMessageListener {
             }
             case "accountDeleted" -> thymleafEmailService.generateAccountDeletedEmail();
             case "emailVerificationToken" -> {
-                String verificationUrl = baseUrl + "/api/v1/auth/verify-email?email=" + model.get("email") + "&token=" + model.get("token");
-                String expiration = ((OffsetDateTime) model.get("expiration"))
-                        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT));
+                String email = (String) model.get("email");
+                String token = (String) model.get("token");
+
+                String verificationUrl = baseUrl + "/api/v1/auth/verify-email?email=" + email + "&token=" + token;
+
+                String expiration = model.get("expiration") instanceof OffsetDateTime
+                        ? ((OffsetDateTime) model.get("expiration"))
+                        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))
+                        : (String) model.get("expiration");
+
 
                 yield thymleafEmailService.generateSendVerificationEmailContent(
                         (String) model.get("firstName"),

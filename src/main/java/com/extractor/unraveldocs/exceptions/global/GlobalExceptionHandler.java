@@ -4,6 +4,7 @@ import com.extractor.unraveldocs.exceptions.custom.*;
 import com.extractor.unraveldocs.exceptions.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -128,6 +129,20 @@ public class GlobalExceptionHandler {
         errorResponse.setError(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase());
         errorResponse.setMessage(ex.getMessage());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String message = "Invalid request payload.";
+        Throwable cause = ex.getCause();
+        if (cause != null && cause.getMessage() != null) {
+            message = cause.getMessage();
+        }
+        errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+        errorResponse.setMessage(message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)

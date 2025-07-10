@@ -5,7 +5,6 @@ import lombok.Getter;
 @Getter
 public enum SubscriptionStatus {
     ACTIVE("Active"),
-    FREE("Free"),
     CANCELLED("Cancelled"),
     TRIAL("Trial"),
     EXPIRED("Expired");

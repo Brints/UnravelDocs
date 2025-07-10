@@ -4,6 +4,6 @@ import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.subscription.dto.request.CreateSubscriptionPlanRequest;
 import com.extractor.unraveldocs.subscription.dto.response.SubscriptionPlansData;
 
-public interface SubscriptionPlansService {
+public interface AddSubscriptionPlansService {
     UnravelDocsDataResponse<SubscriptionPlansData> createSubscriptionPlan(CreateSubscriptionPlanRequest request);
 }

@@ -40,6 +40,9 @@ public class UserSubscription {
     @Column(name = "current_period_end")
     private OffsetDateTime currentPeriodEnd;
 
+    @Column(name = "auto_renew", nullable = false)
+    private boolean autoRenew = false;
+
     @Column(name = "trial_ends_at")
     private OffsetDateTime trialEndsAt;
 
