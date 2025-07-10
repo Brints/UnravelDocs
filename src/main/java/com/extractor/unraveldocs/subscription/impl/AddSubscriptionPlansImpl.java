@@ -5,7 +5,7 @@ import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.subscription.dto.request.CreateSubscriptionPlanRequest;
 import com.extractor.unraveldocs.subscription.dto.response.SubscriptionPlansData;
-import com.extractor.unraveldocs.subscription.interfaces.SubscriptionPlansService;
+import com.extractor.unraveldocs.subscription.interfaces.AddSubscriptionPlansService;
 import com.extractor.unraveldocs.subscription.model.SubscriptionPlan;
 import com.extractor.unraveldocs.subscription.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class SubscriptionPlansImpl implements SubscriptionPlansService {
+public class AddSubscriptionPlansImpl implements AddSubscriptionPlansService {
     private final ResponseBuilderService responseBuilderService;
     private final SubscriptionPlanRepository planRepository;
 
@@ -44,7 +44,7 @@ public class SubscriptionPlansImpl implements SubscriptionPlansService {
                 .buildUserResponse(plansData, HttpStatus.CREATED, "Subscription plan created successfully.");
     }
 
-    private static SubscriptionPlansData getSubscriptionPlansData(SubscriptionPlan savedPlan) {
+    public static SubscriptionPlansData getSubscriptionPlansData(SubscriptionPlan savedPlan) {
         SubscriptionPlansData plansData = new SubscriptionPlansData();
         plansData.setId(savedPlan.getId());
         plansData.setPlanName(savedPlan.getName());

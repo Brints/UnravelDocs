@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, String> {
     Optional<SubscriptionPlan> findByName(SubscriptionPlans name);
+    Optional<SubscriptionPlan> findPlanById(String planId);
 }

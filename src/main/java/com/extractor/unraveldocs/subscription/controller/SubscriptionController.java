@@ -1,27 +1,32 @@
 package com.extractor.unraveldocs.subscription.controller;
 
+import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
+import com.extractor.unraveldocs.security.CurrentUser;
 import com.extractor.unraveldocs.subscription.dto.request.CreateSubscriptionPlanRequest;
+import com.extractor.unraveldocs.subscription.dto.request.UpdateSubscriptionPlanRequest;
 import com.extractor.unraveldocs.subscription.dto.response.SubscriptionPlansData;
-import com.extractor.unraveldocs.subscription.service.SubscriptionService;
+import com.extractor.unraveldocs.subscription.service.SubscriptionPlansService;
+import com.extractor.unraveldocs.user.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/subscriptions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+@PreAuthorize("isAuthenticated() and (hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPER_ADMIN'))")
 public class SubscriptionController {
-    private final SubscriptionService subscriptionService;
+    private final SubscriptionPlansService subscriptionPlansService;
 
     @Operation(
             summary = "Create a new subscription plan",
@@ -37,8 +42,31 @@ public class SubscriptionController {
     )
     @PostMapping("plans")
     public ResponseEntity<UnravelDocsDataResponse<SubscriptionPlansData>> createSubscriptionPlan(CreateSubscriptionPlanRequest request) {
-        UnravelDocsDataResponse<SubscriptionPlansData> createdPlan = subscriptionService.createSubscriptionPlan(request);
+        UnravelDocsDataResponse<SubscriptionPlansData> createdPlan = subscriptionPlansService.createSubscriptionPlan(request);
 
         return new ResponseEntity<>(createdPlan, HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Update an existing subscription plan",
+            description = "Allows an admin to update an existing subscription plan.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Subscription plan updated successfully",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = SubscriptionPlansData.class))),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User not authorized"),
+                    @ApiResponse(responseCode = "404", description = "Not Found - Subscription plan not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error - Failed to update subscription plan")
+            }
+    )
+    @PutMapping(value = "plans/{planId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UnravelDocsDataResponse<SubscriptionPlansData>> updateSubscriptionPlan(
+            @RequestBody UpdateSubscriptionPlanRequest request, @PathVariable String planId) {
+
+        UnravelDocsDataResponse<SubscriptionPlansData> updatedPlan =
+                subscriptionPlansService.updateSubscriptionPlan(planId, request);
+
+        return new ResponseEntity<>(updatedPlan, HttpStatus.OK);
     }
 }
