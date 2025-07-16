@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.subscription.dto.request;
 
+import com.extractor.unraveldocs.subscription.enums.BillingIntervalUnit;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionCurrency;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionPlans;
 import jakarta.validation.constraints.Min;
@@ -21,7 +22,7 @@ public record CreateSubscriptionPlanRequest(
         SubscriptionCurrency currency,
 
         @NotNull(message = "Billing interval unit is required")
-        String billingIntervalUnit,
+        BillingIntervalUnit billingIntervalUnit,
 
         @NotNull(message = "Billing interval value is required")
         @Min(value = 1, message = "Billing interval value must be at least 1")
