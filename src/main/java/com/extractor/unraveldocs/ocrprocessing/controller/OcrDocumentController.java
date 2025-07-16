@@ -56,8 +56,11 @@ public class OcrDocumentController {
     )
     @PostMapping("/{collectionId}/document/{documentId}/extract")
     public ResponseEntity<DocumentCollectionResponse<OcrData>> extractTextFromFile(
-            @Parameter(description = "ID of the document collection", required = true) @PathVariable  String collectionId,
-            @Parameter(description = "ID of the document to extract text from", required = true) @PathVariable String documentId,
+            @Parameter(description = "ID of the document collection", required = true)
+            @PathVariable  String collectionId,
+
+            @Parameter(description = "ID of the document to extract text from", required = true)
+            @PathVariable String documentId,
             Authentication authenticatedUser
     ) {
         User user = getAuthenticatedUser(authenticatedUser);

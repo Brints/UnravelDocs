@@ -131,9 +131,8 @@ public class UpdateSubscriptionPlanImplTest {
         when(planRepository.findPlanById(planId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
-            updateSubscriptionPlanService.updateSubscriptionPlan(updateRequest, planId);
-        });
+        NotFoundException exception = assertThrows(NotFoundException.class, () ->
+            updateSubscriptionPlanService.updateSubscriptionPlan(updateRequest, planId));
 
         assertEquals("Subscription plan not found with ID: " + planId, exception.getMessage());
         verify(planRepository, never()).save(any());

@@ -132,7 +132,7 @@ public class UserController {
                     )
             }
     )
-    @PutMapping(value = "/update-profile",
+    @PutMapping(value = "/profile/{userId}",
             consumes = {
                     MediaType.MULTIPART_FORM_DATA_VALUE,
                     MediaType.APPLICATION_JSON_VALUE
@@ -140,7 +140,8 @@ public class UserController {
     )
     public ResponseEntity<UnravelDocsDataResponse<UserData>> updateProfile(
             @AuthenticationPrincipal UserDetails authenticatedUser,
-            @Valid @ModelAttribute ProfileUpdateRequestDto request
+            @Valid @ModelAttribute ProfileUpdateRequestDto request,
+            @PathVariable("userId") String userId
     ) {
         User user = getAuthenticatedUser(authenticatedUser);
 
@@ -153,13 +154,14 @@ public class UserController {
             throw new TooManyRequestsException("You have made too many profile update requests. Please try again later.");
         }
 
-        return ResponseEntity.ok(userService.updateProfile(request, user.getId()));
+        return ResponseEntity.ok(userService.updateProfile(request, userId));
     }
 
     @Operation(summary = "Delete user profile")
-    @DeleteMapping("/delete-account")
+    @DeleteMapping("/profile/{userId}")
     public ResponseEntity<?> deleteUser(
-            @AuthenticationPrincipal UserDetails authenticatedUser
+            @AuthenticationPrincipal UserDetails authenticatedUser,
+            @PathVariable("userId") String userId
     ) {
         User user = getAuthenticatedUser(authenticatedUser);
 
@@ -169,7 +171,7 @@ public class UserController {
                     "You have made too many account deletion requests. Please try again later."
             );
         }
-        userService.deleteUser(user.getId());
+        userService.deleteUser(userId);
         return ResponseEntity.ok("User profile deleted successfully");
     }
 
@@ -188,10 +190,11 @@ public class UserController {
                     )
             }
     )
-    @PostMapping(value = "/upload-profile-picture", consumes = "multipart/form-data")
+    @PostMapping(value = "/profile/{userId}/upload", consumes = "multipart/form-data")
     public ResponseEntity<UnravelDocsDataResponse<String>> uploadProfilePicture(
             @AuthenticationPrincipal UserDetails authenticatedUser,
-            @RequestParam("file") @NotNull MultipartFile file
+            @RequestParam("file") @NotNull MultipartFile file,
+            @PathVariable("userId") String userId
     ) {
         // Validate the authenticated user
         User user = getAuthenticatedUser(authenticatedUser);
@@ -202,7 +205,7 @@ public class UserController {
         }
 
         // Create a bucket for user actions if it doesn't exist
-        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        Bucket bucket = userActionBuckets.computeIfAbsent(userId, this::createUserActionBucket);
         if (!bucket.tryConsume(1)) {
             throw new TooManyRequestsException(
                     "You have made too many profile picture upload requests. Please try again later.");
@@ -226,13 +229,14 @@ public class UserController {
                     )
             }
     )
-    @DeleteMapping("/delete-profile-picture")
+    @DeleteMapping("/profile/{userId}/delete")
     public ResponseEntity<UnravelDocsDataResponse<Void>> deleteProfilePicture(
-            @AuthenticationPrincipal UserDetails authenticatedUser
+            @AuthenticationPrincipal UserDetails authenticatedUser,
+            @PathVariable("userId") String userId
     ) {
         User user = getAuthenticatedUser(authenticatedUser);
 
-        Bucket bucket = userActionBuckets.computeIfAbsent(user.getId(), this::createUserActionBucket);
+        Bucket bucket = userActionBuckets.computeIfAbsent(userId, this::createUserActionBucket);
         if (!bucket.tryConsume(1)) {
             throw new TooManyRequestsException(
                     "You have made too many profile picture deletion requests. Please try again later."
