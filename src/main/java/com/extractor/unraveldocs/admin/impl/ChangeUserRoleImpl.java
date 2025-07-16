@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.admin.service.impl;
+package com.extractor.unraveldocs.admin.impl;
 
 import com.extractor.unraveldocs.admin.dto.AdminData;
 import com.extractor.unraveldocs.admin.dto.request.ChangeRoleDto;
@@ -8,6 +8,8 @@ import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.exceptions.custom.UnauthorizedException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
+import com.extractor.unraveldocs.subscription.impl.AssignSubscriptionService;
+import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import static com.extractor.unraveldocs.global.response.ResponseData.getResponse
 @Service
 @RequiredArgsConstructor
 public class ChangeUserRoleImpl implements ChangeUserRoleService {
+    private final AssignSubscriptionService assignSubscriptionService;
     private final UserRepository userRepository;
     private final ResponseBuilderService responseBuilder;
 
@@ -42,6 +45,10 @@ public class ChangeUserRoleImpl implements ChangeUserRoleService {
         }
 
         user.setRole(request.getRole());
+
+        UserSubscription subscription = assignSubscriptionService.assignDefaultSubscription(user);
+        user.setSubscription(subscription);
+
         userRepository.save(user);
 
 

@@ -59,7 +59,6 @@ public class LoginUserImpl implements LoginUserService {
             throw new BadRequestException("Authentication failed. Please check your credentials.");
         }
 
-        // If User implements UserDetails, principal is your User entity
         User authenticatedUser = (User) authentication.getPrincipal();
 
         loginAttemptsService.resetLoginAttempts(authenticatedUser);
@@ -69,7 +68,6 @@ public class LoginUserImpl implements LoginUserService {
 
         String refreshTokenJti = jwtTokenProvider.getJtiFromToken(refreshToken);
         if (refreshTokenJti != null) {
-            // Ensure authenticatedUser.getId() returns a type that can be converted to String
             refreshTokenService.storeRefreshToken(refreshTokenJti, authenticatedUser.getId());
         } else {
             log.error("Could not generate JTI for refresh token for user {}", authenticatedUser.getEmail());

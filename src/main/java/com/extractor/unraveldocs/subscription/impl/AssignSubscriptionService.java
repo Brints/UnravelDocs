@@ -1,7 +1,6 @@
 package com.extractor.unraveldocs.subscription.impl;
 
 import com.extractor.unraveldocs.auth.enums.Role;
-import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionPlans;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionStatus;
 import com.extractor.unraveldocs.subscription.model.SubscriptionPlan;
@@ -9,8 +8,12 @@ import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import com.extractor.unraveldocs.subscription.repository.SubscriptionPlanRepository;
 import com.extractor.unraveldocs.user.model.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AssignSubscriptionService {
@@ -19,10 +22,15 @@ public class AssignSubscriptionService {
     public UserSubscription assignDefaultSubscription(User user) {
         SubscriptionPlans planName = determinePlanNameForRole(user.getRole());
 
-        SubscriptionPlan plan = planRepository.findByName(planName)
-                .orElseThrow(() -> new NotFoundException(
-                        "Default subscription plan '" + planName + "' not found. Please ensure plans are created by an admin."));
+        Optional<SubscriptionPlan> planOptional = planRepository.findByName(planName);
 
+        if (planOptional.isEmpty()) {
+            log.warn("Default subscription plan '{}' not found for user {}. " +
+                    "Please ensure plans are created by an admin.", planName, user.getEmail());
+            return null;
+        }
+
+        SubscriptionPlan plan = planOptional.get();
         UserSubscription subscription = new UserSubscription();
         subscription.setUser(user);
         subscription.setPlan(plan);
@@ -34,8 +42,8 @@ public class AssignSubscriptionService {
 
     private SubscriptionPlans determinePlanNameForRole(Role role) {
         return switch (role) {
-            case SUPER_ADMIN, ADMIN -> SubscriptionPlans.ENTERPRISE_YEARLY;
-            case MODERATOR -> SubscriptionPlans.PREMIUM_YEARLY;
+            case Role.SUPER_ADMIN, Role.ADMIN -> SubscriptionPlans.ENTERPRISE_YEARLY;
+            case Role.MODERATOR -> SubscriptionPlans.PREMIUM_YEARLY;
             default -> SubscriptionPlans.FREE;
         };
     }

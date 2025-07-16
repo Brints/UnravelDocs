@@ -3,6 +3,7 @@ package com.extractor.unraveldocs.admin.service.impl;
 import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
 import com.extractor.unraveldocs.admin.dto.response.UserListData;
 import com.extractor.unraveldocs.admin.dto.response.UserSummary;
+import com.extractor.unraveldocs.admin.impl.GetAllUsersImpl;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;

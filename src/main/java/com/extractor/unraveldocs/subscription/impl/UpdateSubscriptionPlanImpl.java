@@ -27,7 +27,8 @@ public class UpdateSubscriptionPlanImpl implements UpdateSubscriptionPlanService
 
     @Override
     @Transactional
-    public UnravelDocsDataResponse<SubscriptionPlansData> updateSubscriptionPlan(UpdateSubscriptionPlanRequest request, String planId) {
+    public UnravelDocsDataResponse<SubscriptionPlansData> updateSubscriptionPlan(
+            UpdateSubscriptionPlanRequest request, String planId) {
         SubscriptionPlan plan = planRepository.findPlanById(planId)
                 .orElseThrow(() -> new NotFoundException("Subscription plan not found with ID: " + planId));
 

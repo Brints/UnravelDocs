@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.admin.service.impl;
 
+import com.extractor.unraveldocs.admin.impl.GetUserProfileByAdmin;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
