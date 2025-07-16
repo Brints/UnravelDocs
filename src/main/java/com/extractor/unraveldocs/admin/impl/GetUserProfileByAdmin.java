@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.admin.service.impl;
+package com.extractor.unraveldocs.admin.impl;
 
 import com.extractor.unraveldocs.admin.interfaces.GetUserProfileByAdminService;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;

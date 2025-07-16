@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findUserById(String id);
 
+    List<User> findBySubscriptionIsNull();
+
     boolean existsByEmail(String email);
 
     @Query("SELECT u FROM User u WHERE " +

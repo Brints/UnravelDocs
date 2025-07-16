@@ -2,12 +2,15 @@ package com.extractor.unraveldocs.admin.service.impl;
 
 import com.extractor.unraveldocs.admin.dto.AdminData;
 import com.extractor.unraveldocs.admin.dto.request.ChangeRoleDto;
+import com.extractor.unraveldocs.admin.impl.ChangeUserRoleImpl;
 import com.extractor.unraveldocs.auth.enums.Role;
 import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.exceptions.custom.NotFoundException;
 import com.extractor.unraveldocs.exceptions.custom.UnauthorizedException;
 import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
+import com.extractor.unraveldocs.subscription.impl.AssignSubscriptionService;
+import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +45,9 @@ public class ChangeUserRoleTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private AssignSubscriptionService assignSubscriptionService;
+
     @InjectMocks
     private ChangeUserRoleImpl changeUserRoleService;
 
@@ -52,12 +58,12 @@ public class ChangeUserRoleTest {
     void setUp() {
         changeRoleDto = new ChangeRoleDto();
         changeRoleDto.setUserId("testUserId");
-        changeRoleDto.setRole(Role.USER); // Target role
+        changeRoleDto.setRole(Role.USER);
 
         user = new User();
         user.setId("testUserId");
         user.setVerified(true);
-        user.setRole(Role.ADMIN); // Initial role of the user
+        user.setRole(Role.ADMIN);
     }
 
     private void mockAdminAuthentication() {
@@ -79,6 +85,7 @@ public class ChangeUserRoleTest {
     void changeUserRole_success_asAdmin() {
         mockAdminAuthentication();
         when(userRepository.findById("testUserId")).thenReturn(Optional.of(user));
+        when(assignSubscriptionService.assignDefaultSubscription(any(User.class))).thenReturn(new UserSubscription());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         UnravelDocsDataResponse<AdminData> expectedResponse = new UnravelDocsDataResponse<>();
@@ -89,8 +96,9 @@ public class ChangeUserRoleTest {
 
         assertNotNull(actualResponse);
         assertEquals(expectedResponse, actualResponse);
-        assertEquals(Role.USER, user.getRole()); // Verify the role was changed to USER
+        assertEquals(Role.USER, user.getRole());
         verify(userRepository, times(1)).findById("testUserId");
+        verify(assignSubscriptionService, times(1)).assignDefaultSubscription(user);
         verify(userRepository, times(1)).save(user);
         verify(responseBuilder, times(1)).buildUserResponse(any(AdminData.class), eq(HttpStatus.OK), eq("User role changed successfully."));
     }
@@ -99,6 +107,7 @@ public class ChangeUserRoleTest {
     void changeUserRole_success_asSuperAdmin() {
         mockSuperAdminAuthentication();
         when(userRepository.findById("testUserId")).thenReturn(Optional.of(user));
+        when(assignSubscriptionService.assignDefaultSubscription(any(User.class))).thenReturn(new UserSubscription());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         UnravelDocsDataResponse<AdminData> expectedResponse = new UnravelDocsDataResponse<>();
@@ -109,8 +118,9 @@ public class ChangeUserRoleTest {
 
         assertNotNull(actualResponse);
         assertEquals(expectedResponse, actualResponse);
-        assertEquals(Role.USER, user.getRole()); // Verify the role was changed to USER
+        assertEquals(Role.USER, user.getRole());
         verify(userRepository, times(1)).findById("testUserId");
+        verify(assignSubscriptionService, times(1)).assignDefaultSubscription(user);
         verify(userRepository, times(1)).save(user);
         verify(responseBuilder, times(1)).buildUserResponse(any(AdminData.class), eq(HttpStatus.OK), eq("User role changed successfully."));
     }

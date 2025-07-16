@@ -1,13 +1,11 @@
 package com.extractor.unraveldocs.subscription.controller;
 
-import com.extractor.unraveldocs.exceptions.custom.ForbiddenException;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
-import com.extractor.unraveldocs.security.CurrentUser;
 import com.extractor.unraveldocs.subscription.dto.request.CreateSubscriptionPlanRequest;
 import com.extractor.unraveldocs.subscription.dto.request.UpdateSubscriptionPlanRequest;
+import com.extractor.unraveldocs.subscription.dto.response.AllSubscriptionPlans;
 import com.extractor.unraveldocs.subscription.dto.response.SubscriptionPlansData;
 import com.extractor.unraveldocs.subscription.service.SubscriptionPlansService;
-import com.extractor.unraveldocs.user.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -68,5 +66,22 @@ public class SubscriptionController {
                 subscriptionPlansService.updateSubscriptionPlan(planId, request);
 
         return new ResponseEntity<>(updatedPlan, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Assign subscriptions to all existing users without one",
+            description = "Assigns a default subscription to all users who do not have a subscription.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Subscriptions assigned successfully"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User not authorized"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error - Failed to assign subscriptions")
+            }
+    )
+    @PostMapping("assign-subscriptions-to-existing-users")
+    public ResponseEntity<UnravelDocsDataResponse<AllSubscriptionPlans>> assignToExistingUsers() {
+        UnravelDocsDataResponse<AllSubscriptionPlans> response =
+                subscriptionPlansService.assignSubscriptionsToExistingUsers();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

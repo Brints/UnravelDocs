@@ -12,6 +12,8 @@ import com.extractor.unraveldocs.global.response.ResponseBuilderService;
 import com.extractor.unraveldocs.global.response.UnravelDocsDataResponse;
 import com.extractor.unraveldocs.loginattempts.model.LoginAttempts;
 import com.extractor.unraveldocs.messaging.emailtemplates.AuthEmailTemplateService;
+import com.extractor.unraveldocs.subscription.impl.AssignSubscriptionService;
+import com.extractor.unraveldocs.subscription.model.UserSubscription;
 import com.extractor.unraveldocs.user.model.User;
 import com.extractor.unraveldocs.user.repository.UserRepository;
 import com.extractor.unraveldocs.utils.generatetoken.GenerateVerificationToken;
@@ -56,6 +58,9 @@ class SignupUserImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AssignSubscriptionService assignSubscriptionService;
 
     @InjectMocks
     private SignupUserImpl signupUserService;
@@ -106,6 +111,7 @@ class SignupUserImplTest {
         when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(false);
+        when(assignSubscriptionService.assignDefaultSubscription(any(User.class))).thenReturn(new UserSubscription());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -139,6 +145,7 @@ class SignupUserImplTest {
         verify(passwordEncoder).encode("P@ssw0rd123");
         verify(verificationToken).generateVerificationToken();
         verify(dateHelper).setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3));
+        verify(assignSubscriptionService).assignDefaultSubscription(any(User.class));
         verify(templatesService).sendVerificationEmail(
                 eq("john.doe@example.com"), eq("John"), eq("Doe"), eq("verificationToken"), eq("3"));
         verify(userRepository).save(any(User.class));
@@ -175,6 +182,7 @@ class SignupUserImplTest {
         when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(true);
+        when(assignSubscriptionService.assignDefaultSubscription(any(User.class))).thenReturn(new UserSubscription());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));
@@ -205,7 +213,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder);
+                templatesService, responseBuilder, assignSubscriptionService);
     }
 
     @Test
@@ -226,7 +234,7 @@ class SignupUserImplTest {
         verify(userRepository).existsByEmail("john.doe@example.com");
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userLibrary, passwordEncoder, verificationToken, dateHelper,
-                templatesService, responseBuilder);
+                templatesService, responseBuilder, assignSubscriptionService);
     }
 
     @Test
@@ -239,6 +247,7 @@ class SignupUserImplTest {
         when(dateHelper.setExpiryDate(any(OffsetDateTime.class), eq("hour"), eq(3))).thenReturn(expiryDate);
         when(dateHelper.getTimeLeftToExpiry(any(OffsetDateTime.class), any(OffsetDateTime.class), eq("hour"))).thenReturn("3");
         when(userRepository.superAdminExists()).thenReturn(false);
+        when(assignSubscriptionService.assignDefaultSubscription(any(User.class))).thenReturn(new UserSubscription());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User savedUser = invocation.getArgument(0);
             savedUser.setId(String.valueOf(1L));

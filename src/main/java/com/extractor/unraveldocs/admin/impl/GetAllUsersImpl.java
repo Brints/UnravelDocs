@@ -1,4 +1,4 @@
-package com.extractor.unraveldocs.admin.service.impl;
+package com.extractor.unraveldocs.admin.impl;
 
 import com.extractor.unraveldocs.admin.dto.request.UserFilterDto;
 import com.extractor.unraveldocs.admin.dto.response.UserListData;

@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.subscription.dto.response;
 
+import com.extractor.unraveldocs.subscription.enums.BillingIntervalUnit;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionCurrency;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionPlans;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ public class SubscriptionPlansData {
     private SubscriptionPlans planName;
     private BigDecimal planPrice;
     private SubscriptionCurrency planCurrency;
-    private String billingIntervalUnit;
+    private BillingIntervalUnit billingIntervalUnit;
     private Integer billingIntervalValue;
     private Integer documentUploadLimit;
     private Integer ocrPageLimit;

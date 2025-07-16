@@ -1,5 +1,6 @@
 package com.extractor.unraveldocs.subscription.model;
 
+import com.extractor.unraveldocs.subscription.enums.BillingIntervalUnit;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionCurrency;
 import com.extractor.unraveldocs.subscription.enums.SubscriptionPlans;
 import jakarta.persistence.*;
@@ -35,7 +36,7 @@ public class SubscriptionPlan {
     private SubscriptionCurrency currency;
 
     @Column(nullable = false, name = "billing_interval_unit")
-    private String billingIntervalUnit; // e.g., "month", "year"
+    private BillingIntervalUnit billingIntervalUnit;
 
     @Column(nullable = false, name = "billing_interval_value")
     private Integer billingIntervalValue; // e.g., 1 for monthly, 12 for yearly
